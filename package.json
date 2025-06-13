@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@web/dev-server": "^0.4.6"
+  },
+  "scripts" : {
+    "serve": "wds --node-resolve --open"
+  }
+}
