@@ -1,8 +1,18 @@
 {
   "devDependencies": {
-    "@web/dev-server": "^0.4.6"
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@web/dev-server": "^0.4.6",
+    "@web/rollup-plugin-html": "^2.3.0"
   },
-  "scripts" : {
-    "serve": "wds --node-resolve --open"
-  }
+  "scripts": {
+    "serve": "wds --node-resolve --open",
+    "build": "rollup -c rollup.config.js",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy:functions": "npm run build:functions && firebase deploy --only functions",
+    "deploy:all": "npm run deploy && npm run deploy:functions"
+  },
+  "dependencies": {
+    "rollup": "^4.43.0"
+  },
+  "type": "module"
 }
