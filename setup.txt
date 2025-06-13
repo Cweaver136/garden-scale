@@ -1,0 +1,19 @@
+Setup Node/NPM
+
+    https://nodejs.org/en/download
+
+Dependencies:
+
+    npm install firebase-tools
+    npm install rollup
+    npm install lit
+    npm i --save-dev @web/dev-server
+
+
+Run Firebase Init to setup firebase project
+
+Copy config file found in this repo
+
+Copy Package JSON scripts from this repo.
+
+BOOM
