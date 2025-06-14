@@ -2,6 +2,7 @@ import { rollupPluginHTML as html } from '@web/rollup-plugin-html';
 import nodeResolve from '@rollup/plugin-node-resolve';
 
 const pagesArray = [
+  'produce-selection'
 ];
 
 const pagesToInclude = pagesArray?.map((page) => `${page}/**/*.html`) || [];
