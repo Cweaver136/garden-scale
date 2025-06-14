@@ -12,6 +12,7 @@
     "deploy:all": "npm run deploy && npm run deploy:functions"
   },
   "dependencies": {
+    "firebase": "^11.9.1",
     "lit": "^3.3.0",
     "rollup": "^4.43.0"
   },
