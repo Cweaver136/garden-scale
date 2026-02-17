@@ -42,6 +42,7 @@ class ProduceSelection extends LitElement {
       max-height: 200px;
       margin: 25px;
       border: 1px solid black;
+      border-radius: 12px;
     }
     .produceOption:hover {
       transform: scale(1.05);
