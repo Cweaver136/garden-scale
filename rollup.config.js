@@ -1,16 +1,9 @@
 import { rollupPluginHTML as html } from '@web/rollup-plugin-html';
 import nodeResolve from '@rollup/plugin-node-resolve';
 
-const pagesArray = [
-  'produce-selection'
-];
-
-const pagesToInclude = pagesArray?.map((page) => `${page}/**/*.html`) || [];
-pagesToInclude.push('index.html');
-
 const CONFIG = {
   // our input files, relative reference from rootDir specified below
-  input: [...pagesToInclude],
+  input: ['index.html'],
   // plugins to make the thing go zoom zoom
   plugins: [
     // plugin for generating HTML files from rollup
