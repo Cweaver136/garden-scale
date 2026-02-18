@@ -5,71 +5,179 @@ import '../historical-data/historical-data.js';
 class GardenApp extends LitElement {
 
   static properties = {
-    currentView: { type: String }
+    currentView: { type: String },
+    _livestockOpen: { type: Boolean, state: true },
+    _gardenOpen: { type: Boolean, state: true },
   }
 
   static styles = css`
+    @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,300,0,0');
+
+    /* Ensure icon font works inside shadow DOM */
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+
     :host {
       display: block;
       height: 100vh;
       font-family: 'Roboto', sans-serif;
-      background-color: #F5F7F3;
     }
 
-    nav {
+    #app {
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* ── Top navigation bar ── */
+    #header {
       background-color: #3E6B48;
       height: 56px;
+      display: flex;
+      align-items: center;
       padding: 0 24px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      position: sticky;
-      top: 0;
-      z-index: 100;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 200;
+      gap: 32px;
     }
 
-    .nav-title {
+    .app-title {
       color: #FFFFFF;
       font-size: 18px;
       font-weight: 600;
-      margin-right: 40px;
       letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
-    .nav-links {
+    .nav-items {
       display: flex;
-      gap: 4px;
+      align-items: center;
       height: 100%;
+      gap: 4px;
+    }
+
+    /* ── Nav buttons (top-level) ── */
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 100%;
+      padding: 0 14px;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    .nav-btn:hover {
+      color: #FFFFFF;
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    .nav-btn.open,
+    .nav-btn.active {
+      color: #FFFFFF;
+      border-bottom-color: #90C795;
+    }
+
+    .nav-btn .nav-chevron {
+      font-size: 18px;
+      opacity: 0.7;
+      transition: transform 0.2s ease;
+    }
+
+    .nav-btn .nav-chevron.rotated {
+      transform: rotate(180deg);
+    }
+
+    /* ── Dropdown wrapper (positions the panel) ── */
+    .nav-dropdown {
+      position: relative;
+      height: 100%;
+      display: flex;
       align-items: center;
     }
 
-    .nav-link {
+    /* ── Dropdown panel ── */
+    .dropdown-panel {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background-color: #2C4E32;
+      min-width: 196px;
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      overflow: hidden;
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s linear 0.15s;
+      z-index: 300;
+    }
+
+    .dropdown-panel.open {
+      visibility: visible;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 400;
       color: rgba(255, 255, 255, 0.8);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      padding: 8px 16px;
-      border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.2s, color 0.2s;
       user-select: none;
+      transition: background-color 0.15s, color 0.15s;
     }
 
-    .nav-link:hover {
-      background-color: rgba(255, 255, 255, 0.12);
+    .dropdown-item:hover {
+      background-color: rgba(255, 255, 255, 0.08);
       color: #FFFFFF;
     }
 
-    .nav-link.active {
-      background-color: rgba(255, 255, 255, 0.2);
-      color: #FFFFFF;
+    .dropdown-item.active {
+      color: #90C795;
+      background-color: rgba(255, 255, 255, 0.06);
     }
 
-    .page-container {
-      height: calc(100vh - 56px);
+    .dropdown-item .material-symbols-outlined {
+      font-size: 17px;
+      opacity: 0.85;
+    }
+
+    /* ── Main content ── */
+    #main {
+      flex: 1;
+      background-color: #F5F7F3;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
 
+    /* ── Placeholder pages ── */
     .placeholder-page {
       display: flex;
       flex-direction: column;
@@ -99,46 +207,111 @@ class GardenApp extends LitElement {
 
   constructor() {
     super();
+    this._livestockOpen = false;
+    this._gardenOpen = false;
     this.currentView = this._getViewFromHash();
     window.addEventListener('hashchange', () => {
       this.currentView = this._getViewFromHash();
+    });
+    // Close dropdowns when clicking outside the component
+    document.addEventListener('click', (e) => {
+      if (!this.contains(e.target) && !e.composedPath().includes(this)) {
+        this._livestockOpen = false;
+        this._gardenOpen = false;
+      }
     });
   }
 
   _getViewFromHash() {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['record-harvest', 'historical-data', 'financials'];
+    const validViews = ['record-harvest', 'historical-data', 'garden-financials', 'poultry', 'financials'];
     return validViews.includes(hash) ? hash : 'record-harvest';
   }
 
   _navigate(view) {
+    this._livestockOpen = false;
+    this._gardenOpen = false;
     window.location.hash = view;
   }
 
   render() {
+    const gardenViews = ['record-harvest', 'historical-data', 'garden-financials'];
+    const livestockViews = ['poultry'];
+
     return html`
-      <nav>
-        <span class="nav-title">Garden Scale</span>
-        <div class="nav-links">
-          <span
-            class="nav-link ${this.currentView === 'historical-data' ? 'active' : ''}"
-            @click="${() => this._navigate('historical-data')}">
-            Historical Data
-          </span>
-          <span
-            class="nav-link ${this.currentView === 'record-harvest' ? 'active' : ''}"
-            @click="${() => this._navigate('record-harvest')}">
-            Record Harvest
-          </span>
-          <span
-            class="nav-link ${this.currentView === 'financials' ? 'active' : ''}"
-            @click="${() => this._navigate('financials')}">
-            Financials
-          </span>
+      <div id="app">
+
+        <div id="header">
+          <span class="app-title">Weaver Farms</span>
+
+          <nav class="nav-items">
+
+            <!-- Livestock (dropdown drawer) -->
+            <div class="nav-dropdown">
+              <div
+                class="nav-btn ${this._livestockOpen || livestockViews.includes(this.currentView) ? 'open' : ''}"
+                @click="${(e) => { e.stopPropagation(); this._gardenOpen = false; this._livestockOpen = !this._livestockOpen; }}">
+                <span class="material-symbols-outlined">pets</span>
+                Livestock
+                <span class="material-symbols-outlined nav-chevron ${this._livestockOpen ? 'rotated' : ''}">expand_more</span>
+              </div>
+              <div class="dropdown-panel ${this._livestockOpen ? 'open' : ''}">
+                <div
+                  class="dropdown-item ${this.currentView === 'poultry' ? 'active' : ''}"
+                  @click="${() => this._navigate('poultry')}">
+                  <span class="material-symbols-outlined">egg</span>
+                  Poultry
+                </div>
+              </div>
+            </div>
+
+            <!-- Garden (dropdown drawer) -->
+            <div class="nav-dropdown">
+              <div
+                class="nav-btn ${this._gardenOpen || gardenViews.includes(this.currentView) ? 'open' : ''}"
+                @click="${(e) => { e.stopPropagation(); this._livestockOpen = false; this._gardenOpen = !this._gardenOpen; }}">
+                <span class="material-symbols-outlined">yard</span>
+                Garden
+                <span class="material-symbols-outlined nav-chevron ${this._gardenOpen ? 'rotated' : ''}">expand_more</span>
+              </div>
+              <div class="dropdown-panel ${this._gardenOpen ? 'open' : ''}">
+                <div
+                  class="dropdown-item ${this.currentView === 'historical-data' ? 'active' : ''}"
+                  @click="${() => this._navigate('historical-data')}">
+                  <span class="material-symbols-outlined">history</span>
+                  Historical Data
+                </div>
+                <div
+                  class="dropdown-item ${this.currentView === 'record-harvest' ? 'active' : ''}"
+                  @click="${() => this._navigate('record-harvest')}">
+                  <span class="material-symbols-outlined">add_circle</span>
+                  Record Harvest
+                </div>
+                <div
+                  class="dropdown-item ${this.currentView === 'garden-financials' ? 'active' : ''}"
+                  @click="${() => this._navigate('garden-financials')}">
+                  <span class="material-symbols-outlined">payments</span>
+                  Financials
+                </div>
+              </div>
+            </div>
+
+            <!-- Financials (direct link, no dropdown) -->
+            <div
+              class="nav-btn ${this.currentView === 'financials' ? 'active' : ''}"
+              @click="${() => this._navigate('financials')}">
+              <span class="material-symbols-outlined">account_balance</span>
+              Financials
+            </div>
+
+          </nav>
         </div>
-      </nav>
-      <div class="page-container">
-        ${this._renderCurrentView()}
+
+        <!-- Main content -->
+        <main id="main">
+          ${this._renderCurrentView()}
+        </main>
+
       </div>
     `;
   }
@@ -149,21 +322,33 @@ class GardenApp extends LitElement {
         return html`<produce-selection></produce-selection>`;
       case 'historical-data':
         return html`<historical-data></historical-data>`;
+      case 'garden-financials':
+        return html`
+          <div class="placeholder-page">
+            <span class="icon material-symbols-outlined">payments</span>
+            <h2>Garden Financials</h2>
+            <p>Garden revenue and expense tracking is coming soon.</p>
+          </div>
+        `;
+      case 'poultry':
+        return html`
+          <div class="placeholder-page">
+            <span class="icon material-symbols-outlined">egg</span>
+            <h2>Poultry</h2>
+            <p>Poultry performance tracking is coming soon.</p>
+          </div>
+        `;
       case 'financials':
-        return this._renderFinancialsPlaceholder();
+        return html`
+          <div class="placeholder-page">
+            <span class="icon material-symbols-outlined">account_balance</span>
+            <h2>Financials</h2>
+            <p>Overall farm financial overview is coming soon.</p>
+          </div>
+        `;
       default:
         return html`<produce-selection></produce-selection>`;
     }
-  }
-
-  _renderFinancialsPlaceholder() {
-    return html`
-      <div class="placeholder-page">
-        <span class="icon material-symbols-outlined">account_balance</span>
-        <h2>Financials</h2>
-        <p>This section is coming soon.</p>
-      </div>
-    `;
   }
 }
 
