@@ -118,8 +118,7 @@ class ProduceSelection extends LitElement {
   }
 
   async _onHarvestSubmit(e) {
-    const { produceKey, weight } = e.detail;
-    this._dialogOpen = false;
+    const { produceKey, weight, resolve } = e.detail;
 
     let update = {};
     update.produce_key = produceKey;
@@ -142,6 +141,8 @@ class ProduceSelection extends LitElement {
     update.harvest_weight = weight;
 
     await firebase.database().ref('harvest').push(update);
+
+    resolve();
   }
 }
 

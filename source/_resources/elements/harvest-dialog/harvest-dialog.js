@@ -7,7 +7,8 @@ class HarvestDialog extends LitElement {
     produceName: { type: String },
     produceKey: { type: String },
     produceImage: { type: String },
-    weight: { type: String }
+    weight: { type: String },
+    _submitState: { type: String, state: true },  // 'idle' | 'loading' | 'success'
   }
 
   static styles = css`
@@ -38,6 +39,10 @@ class HarvestDialog extends LitElement {
     @keyframes slideUp {
       from { transform: translateY(12px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     .dialog {
@@ -134,7 +139,7 @@ class HarvestDialog extends LitElement {
       font-weight: 500;
       font-family: 'Roboto', sans-serif;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background-color 0.2s, min-width 0.2s;
     }
 
     .btn-cancel {
@@ -143,23 +148,58 @@ class HarvestDialog extends LitElement {
       color: #4A6350;
     }
 
-    .btn-cancel:hover {
+    .btn-cancel:hover:not(:disabled) {
       background-color: #F0F3F0;
     }
 
+    .btn-cancel:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
     .btn-submit {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 116px;
+      justify-content: center;
       background-color: #3E6B48;
       border: none;
       color: #FFFFFF;
     }
 
-    .btn-submit:hover {
+    .btn-submit:hover:not(:disabled) {
       background-color: #345A3D;
     }
 
     .btn-submit:disabled {
-      background-color: #A3B5A8;
       cursor: not-allowed;
+    }
+
+    .btn-submit.loading {
+      background-color: #5A8065;
+    }
+
+    .btn-submit.success {
+      background-color: #2D7A3A;
+      transition: background-color 0.3s;
+    }
+
+    /* CSS spinner */
+    .spinner {
+      width: 13px;
+      height: 13px;
+      border: 2px solid rgba(255, 255, 255, 0.35);
+      border-top-color: #FFFFFF;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* Checkmark */
+    .checkmark {
+      font-size: 15px;
+      line-height: 1;
     }
   `;
 
@@ -170,10 +210,15 @@ class HarvestDialog extends LitElement {
     this.produceKey = '';
     this.produceImage = '';
     this.weight = '';
+    this._submitState = 'idle';
   }
 
   render() {
     if (!this.open) return html``;
+
+    const isLoading = this._submitState === 'loading';
+    const isSuccess = this._submitState === 'success';
+    const isBusy = isLoading || isSuccess;
 
     return html`
       <div class="overlay" @click="${this._onOverlayClick}">
@@ -197,18 +242,20 @@ class HarvestDialog extends LitElement {
                 step="0.01"
                 placeholder="Enter weight"
                 .value="${this.weight}"
+                ?disabled="${isBusy}"
                 @input="${(e) => this.weight = e.target.value}"
               >
             </div>
-            <!-- Additional harvest inputs can be added here -->
           </div>
           <div class="dialog-footer">
-            <button class="btn-cancel" @click="${this._close}">Cancel</button>
+            <button class="btn-cancel" ?disabled="${isBusy}" @click="${this._close}">Cancel</button>
             <button
-              class="btn-submit"
-              ?disabled="${!this.weight}"
+              class="btn-submit ${this._submitState}"
+              ?disabled="${!this.weight || isBusy}"
               @click="${this._submit}">
-              Save Harvest
+              ${isLoading ? html`<span class="spinner"></span> Saving…`
+                : isSuccess ? html`<span class="checkmark">✓</span> Saved!`
+                : 'Save Harvest'}
             </button>
           </div>
         </div>
@@ -217,27 +264,34 @@ class HarvestDialog extends LitElement {
   }
 
   _onOverlayClick() {
-    this._close();
+    // Don't allow dismissal while a write is in flight
+    if (this._submitState === 'idle') this._close();
   }
 
   _close() {
     this.weight = '';
+    this._submitState = 'idle';
     this.open = false;
     this.dispatchEvent(new CustomEvent('dialog-closed'));
   }
 
   _submit() {
-    if (!this.weight) return;
+    if (!this.weight || this._submitState !== 'idle') return;
+
+    this._submitState = 'loading';
 
     this.dispatchEvent(new CustomEvent('harvest-submit', {
       detail: {
         produceKey: this.produceKey,
-        weight: parseFloat(this.weight)
+        weight: parseFloat(this.weight),
+        resolve: () => this._onWriteComplete(),
       }
     }));
+  }
 
-    this.weight = '';
-    this.open = false;
+  _onWriteComplete() {
+    this._submitState = 'success';
+    setTimeout(() => this._close(), 1400);
   }
 }
 
