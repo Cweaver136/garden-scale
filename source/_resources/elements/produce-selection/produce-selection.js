@@ -120,29 +120,31 @@ class ProduceSelection extends LitElement {
   async _onHarvestSubmit(e) {
     const { produceKey, weight, resolve } = e.detail;
 
-    let update = {};
-    update.produce_key = produceKey;
-    update.date_harvested = DateTime.now().ts;
-
-    // Temperature at time of harvest
-    const API_KEY = '18ec2e0a89f38de836ae9e5f16371798';
-    const BASE_URL = `https://api.openweathermap.org/data/2.5/weather?lat=${40.241413}&lon=${-77.228106}&units=imperial&appid=${API_KEY}`;
     try {
-      const response = await fetch(BASE_URL);
-      if (!response.ok) {
-        throw new Error(`Response status: ${response.status}`);
+      let update = {};
+      update.produce_key = produceKey;
+      update.date_harvested = DateTime.now().ts;
+
+      // Temperature at time of harvest
+      const API_KEY = '18ec2e0a89f38de836ae9e5f16371798';
+      const BASE_URL = `https://api.openweathermap.org/data/2.5/weather?lat=${40.241413}&lon=${-77.228106}&units=imperial&appid=${API_KEY}`;
+      try {
+        const response = await fetch(BASE_URL);
+        if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
+        }
+        const json = await response.json();
+        update.temperature_at_harvest = json?.main?.temp;
+      } catch (error) {
+        console.error('Error fetching temperature:', error.message);
       }
-      const json = await response.json();
-      update.temperature_at_harvest = json?.main?.temp;
-    } catch (error) {
-      console.error('Error fetching temperature:', error.message);
+
+      update.harvest_weight = weight;
+
+      await firebase.database().ref('harvest').push(update);
+    } finally {
+      resolve?.();
     }
-
-    update.harvest_weight = weight;
-
-    await firebase.database().ref('harvest').push(update);
-
-    resolve();
   }
 }
 
