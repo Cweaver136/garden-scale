@@ -1,87 +1,128 @@
-import {LitElement, html, css} from 'lit';
-import {map} from 'lit/directives/map.js';
-import { firebase } from  "../../../../firebaseConfig.js"
-import { DateTime } from "luxon";
+import { LitElement, html, css } from 'lit';
+import { map } from 'lit/directives/map.js';
+import { firebase } from '../../../../firebaseConfig.js';
+import { DateTime } from 'luxon';
+import '../harvest-dialog/harvest-dialog.js';
 
 class ProduceSelection extends LitElement {
 
   static properties = {
-    produceReference: Object
+    produceReference: { type: Object },
+    _selectedProduce: { type: Object, state: true },
+    _dialogOpen: { type: Boolean, state: true }
   }
 
   static styles = css`
-
-    #container {
+    :host {
+      display: block;
       height: 100%;
-      display: flex;
-      justify-content: center;
-      flex-direction: column
     }
-    #header {
-      background-color: #8DAB7F;
-      height: 60px;
-      width: 100%;
-      position: absolute;
-      top: 0;
+
+    .page-header {
+      padding: 28px 32px 12px;
     }
-    #produceSelection {
-      background-color: #8DAB7F;
-      height: calc(100% - 60px);
-      margin-top: 60px;
+
+    .page-header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 600;
+      color: #2C3E2F;
+    }
+
+    .page-header p {
+      margin: 6px 0 0 0;
+      font-size: 14px;
+      color: #6B8070;
+    }
+
+    .produce-grid {
       display: flex;
       flex-wrap: wrap;
-      flex-grow: 1;
-      justify-content: center;
+      gap: 20px;
+      padding: 20px 32px 32px;
     }
-    .produceOption {
+
+    .produce-card {
       display: flex;
       flex-direction: column;
-      justify-content: center;
       align-items: center;
-      min-width: 200px;
-      max-height: 200px;
-      margin: 25px;
-      border: 1px solid black;
+      justify-content: center;
+      width: 160px;
+      height: 160px;
+      background: #FFFFFF;
+      border: 1px solid #D8E0DA;
       border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      gap: 10px;
     }
-    .produceOption:hover {
-      transform: scale(1.05);
-      cursor: pointer
+
+    .produce-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 16px rgba(62, 107, 72, 0.12);
+      border-color: #8DAB7F;
     }
-  `
+
+    .produce-card img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+    }
+
+    .produce-card span {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2C3E2F;
+    }
+  `;
+
   constructor() {
     super();
+    this.produceReference = {};
+    this._selectedProduce = null;
+    this._dialogOpen = false;
 
     firebase.database().ref('produce_reference').once('value').then(s => {
       this.produceReference = s.val();
     });
-      
   }
 
   render() {
     return html`
-    <div id="container">
-      <div id="header">
-        <span>Texts</span>
+      <div class="page-header">
+        <h1>Record Harvest</h1>
+        <p>Select the produce you harvested</p>
       </div>
-      <div id="produceSelection">
+      <div class="produce-grid">
         ${map(Object.entries(this.produceReference || {}), ([key, item]) => html`
-          <div id="${key}" class="produceOption" @click="${this.weighProduce}">
-            <img src="${item.image}" height="75">
+          <div class="produce-card" @click="${() => this._openDialog(key, item)}">
+            <img src="${item.image}" alt="${item.name}">
             <span>${item.name}</span>
           </div>
-          `
-        )}
+        `)}
       </div>
-    </div>
+      <harvest-dialog
+        ?open="${this._dialogOpen}"
+        .produceName="${this._selectedProduce?.name || ''}"
+        .produceKey="${this._selectedProduce?.key || ''}"
+        .produceImage="${this._selectedProduce?.image || ''}"
+        @harvest-submit="${this._onHarvestSubmit}"
+        @dialog-closed="${() => this._dialogOpen = false}"
+      ></harvest-dialog>
     `;
   }
 
-  async weighProduce(e) {
-    let update = {};
-    update.produce_key = e?.currentTarget?.id;
+  _openDialog(key, item) {
+    this._selectedProduce = { key, name: item.name, image: item.image };
+    this._dialogOpen = true;
+  }
 
-    // Timestamp of harvest
+  async _onHarvestSubmit(e) {
+    const { produceKey, weight } = e.detail;
+    this._dialogOpen = false;
+
+    let update = {};
+    update.produce_key = produceKey;
     update.date_harvested = DateTime.now().ts;
 
     // Temperature at time of harvest
@@ -92,20 +133,15 @@ class ProduceSelection extends LitElement {
       if (!response.ok) {
         throw new Error(`Response status: ${response.status}`);
       }
-
       const json = await response.json();
-      const temp = json?.main?.temp;
-      update.temperature_at_harvest = temp;
+      update.temperature_at_harvest = json?.main?.temp;
     } catch (error) {
-      alert('There was an error fetching temperature data');
-      console.error(error.message);
+      console.error('Error fetching temperature:', error.message);
     }
 
-    // Weight of produce
-    update.harvest_weight = 123;
+    update.harvest_weight = weight;
 
     await firebase.database().ref('harvest').push(update);
-    alert('Harvest successfully logged!');
   }
 }
 
