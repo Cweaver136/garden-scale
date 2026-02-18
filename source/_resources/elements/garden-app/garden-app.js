@@ -224,7 +224,7 @@ class GardenApp extends LitElement {
 
   _getViewFromHash() {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['record-harvest', 'historical-data', 'garden-financials', 'poultry', 'financials'];
+    const validViews = ['record-harvest', 'historical-data', 'farm-financials', 'poultry'];
     return validViews.includes(hash) ? hash : 'record-harvest';
   }
 
@@ -235,7 +235,7 @@ class GardenApp extends LitElement {
   }
 
   render() {
-    const gardenViews = ['record-harvest', 'historical-data', 'garden-financials'];
+    const gardenViews = ['record-harvest', 'historical-data'];
     const livestockViews = ['poultry'];
 
     return html`
@@ -245,6 +245,31 @@ class GardenApp extends LitElement {
           <span class="app-title">Weaver Farms</span>
 
           <nav class="nav-items">
+
+            <!-- Garden (dropdown drawer) -->
+            <div class="nav-dropdown">
+              <div
+                class="nav-btn ${this._gardenOpen || gardenViews.includes(this.currentView) ? 'open' : ''}"
+                @click="${(e) => { e.stopPropagation(); this._livestockOpen = false; this._gardenOpen = !this._gardenOpen; }}">
+                <span class="material-symbols-outlined">yard</span>
+                Garden
+                <span class="material-symbols-outlined nav-chevron ${this._gardenOpen ? 'rotated' : ''}">expand_more</span>
+              </div>
+              <div class="dropdown-panel ${this._gardenOpen ? 'open' : ''}">
+                <div
+                  class="dropdown-item ${this.currentView === 'record-harvest' ? 'active' : ''}"
+                  @click="${() => this._navigate('record-harvest')}">
+                  <span class="material-symbols-outlined">add_circle</span>
+                  Record Harvest
+                </div>
+                <div
+                  class="dropdown-item ${this.currentView === 'historical-data' ? 'active' : ''}"
+                  @click="${() => this._navigate('historical-data')}">
+                  <span class="material-symbols-outlined">history</span>
+                  Historical Data
+                </div>
+              </div>
+            </div>
 
             <!-- Livestock (dropdown drawer) -->
             <div class="nav-dropdown">
@@ -265,41 +290,10 @@ class GardenApp extends LitElement {
               </div>
             </div>
 
-            <!-- Garden (dropdown drawer) -->
-            <div class="nav-dropdown">
-              <div
-                class="nav-btn ${this._gardenOpen || gardenViews.includes(this.currentView) ? 'open' : ''}"
-                @click="${(e) => { e.stopPropagation(); this._livestockOpen = false; this._gardenOpen = !this._gardenOpen; }}">
-                <span class="material-symbols-outlined">yard</span>
-                Garden
-                <span class="material-symbols-outlined nav-chevron ${this._gardenOpen ? 'rotated' : ''}">expand_more</span>
-              </div>
-              <div class="dropdown-panel ${this._gardenOpen ? 'open' : ''}">
-                <div
-                  class="dropdown-item ${this.currentView === 'historical-data' ? 'active' : ''}"
-                  @click="${() => this._navigate('historical-data')}">
-                  <span class="material-symbols-outlined">history</span>
-                  Historical Data
-                </div>
-                <div
-                  class="dropdown-item ${this.currentView === 'record-harvest' ? 'active' : ''}"
-                  @click="${() => this._navigate('record-harvest')}">
-                  <span class="material-symbols-outlined">add_circle</span>
-                  Record Harvest
-                </div>
-                <div
-                  class="dropdown-item ${this.currentView === 'garden-financials' ? 'active' : ''}"
-                  @click="${() => this._navigate('garden-financials')}">
-                  <span class="material-symbols-outlined">payments</span>
-                  Financials
-                </div>
-              </div>
-            </div>
-
             <!-- Financials (direct link, no dropdown) -->
             <div
-              class="nav-btn ${this.currentView === 'financials' ? 'active' : ''}"
-              @click="${() => this._navigate('financials')}">
+              class="nav-btn ${this.currentView === 'farm-financials' ? 'active' : ''}"
+              @click="${() => this._navigate('farm-financials')}">
               <span class="material-symbols-outlined">account_balance</span>
               Financials
             </div>
@@ -322,12 +316,12 @@ class GardenApp extends LitElement {
         return html`<produce-selection></produce-selection>`;
       case 'historical-data':
         return html`<historical-data></historical-data>`;
-      case 'garden-financials':
+      case 'farm-financials':
         return html`
           <div class="placeholder-page">
             <span class="icon material-symbols-outlined">payments</span>
-            <h2>Garden Financials</h2>
-            <p>Garden revenue and expense tracking is coming soon.</p>
+            <h2>Farm Financials</h2>
+            <p>Farm revenue and expense tracking is coming soon.</p>
           </div>
         `;
       case 'poultry':
@@ -336,14 +330,6 @@ class GardenApp extends LitElement {
             <span class="icon material-symbols-outlined">egg</span>
             <h2>Poultry</h2>
             <p>Poultry performance tracking is coming soon.</p>
-          </div>
-        `;
-      case 'financials':
-        return html`
-          <div class="placeholder-page">
-            <span class="icon material-symbols-outlined">account_balance</span>
-            <h2>Financials</h2>
-            <p>Overall farm financial overview is coming soon.</p>
           </div>
         `;
       default:
