@@ -2,6 +2,7 @@ import { LitElement, html, css } from 'lit';
 import { map } from 'lit/directives/map.js';
 import { firebase } from '../../../../firebaseConfig.js';
 import { DateTime } from 'luxon';
+import './harvest-edit-dialog.js';
 
 class HistoricalData extends LitElement {
 
@@ -10,15 +11,31 @@ class HistoricalData extends LitElement {
     _produceReference: { type: Object, state: true },
     _loading: { type: Boolean, state: true },
     _filterProduce: { type: String, state: true },
-    _filterDateFrom: { type: String, state: true },
-    _filterDateTo: { type: String, state: true },
+    _filterYear: { type: String, state: true },
     _filterWeightMin: { type: String, state: true },
     _filterWeightMax: { type: String, state: true },
     _filterTempMin: { type: String, state: true },
-    _filterTempMax: { type: String, state: true }
+    _filterTempMax: { type: String, state: true },
+    _editDialogOpen: { type: Boolean, state: true },
+    _editingHarvest: { type: Object, state: true },
   }
 
   static styles = css`
+    /* Icon font — must be declared inside each shadow root */
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+
     :host {
       display: block;
       height: 100%;
@@ -90,10 +107,6 @@ class HistoricalData extends LitElement {
       width: 80px;
     }
 
-    .filter-group input[type="date"] {
-      width: 130px;
-    }
-
     .btn-clear {
       padding: 7px 14px;
       border: 1px solid #C8D5CB;
@@ -137,11 +150,18 @@ class HistoricalData extends LitElement {
       border-bottom: 1px solid #E0E5E1;
     }
 
+    /* Actions column shrinks to its content */
+    th:last-child,
+    td:last-child {
+      width: 1px;
+    }
+
     td {
       padding: 12px 16px;
       font-size: 14px;
       color: #2C3E2F;
       border-bottom: 1px solid #F0F3F0;
+      white-space: nowrap;
     }
 
     tr:last-child td {
@@ -150,6 +170,52 @@ class HistoricalData extends LitElement {
 
     tr:hover td {
       background-color: #FAFBFA;
+    }
+
+    /* ── Row action buttons ── */
+    .actions-cell {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid #E0E5E1;
+      border-radius: 8px;
+      background: #F5F7F3;
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+      padding: 0;
+    }
+
+    .action-btn .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    .action-btn.edit {
+      color: #6B8070;
+    }
+
+    .action-btn.edit:hover {
+      background-color: #E8ECE9;
+      border-color: #B8D4BC;
+      color: #3E6B48;
+    }
+
+    .action-btn.delete {
+      color: #B0C0B4;
+    }
+
+    .action-btn.delete:hover {
+      background-color: #FDECEA;
+      border-color: #F0A8A0;
+      color: #C0392B;
     }
 
     .empty-state {
@@ -194,12 +260,13 @@ class HistoricalData extends LitElement {
     this._produceReference = {};
     this._loading = true;
     this._filterProduce = '';
-    this._filterDateFrom = '';
-    this._filterDateTo = '';
+    this._filterYear = '';
     this._filterWeightMin = '';
     this._filterWeightMax = '';
     this._filterTempMin = '';
     this._filterTempMax = '';
+    this._editDialogOpen = false;
+    this._editingHarvest = null;
 
     this._loadData();
   }
@@ -225,8 +292,13 @@ class HistoricalData extends LitElement {
             : 'N/A',
           _dateISO: record.date_harvested
             ? DateTime.fromMillis(record.date_harvested).toISODate()
-            : ''
+            : '',
+          _year: record.date_harvested
+            ? String(DateTime.fromMillis(record.date_harvested).year)
+            : '',
         })).sort((a, b) => (b.date_harvested || 0) - (a.date_harvested || 0));
+      } else {
+        this._harvests = [];
       }
     } catch (error) {
       console.error('Error loading harvest data:', error);
@@ -242,12 +314,16 @@ class HistoricalData extends LitElement {
     })).sort((a, b) => a.name.localeCompare(b.name));
   }
 
+  get _yearOptions() {
+    const years = new Set(this._harvests.map(h => h._year).filter(Boolean));
+    return [...years].sort((a, b) => b.localeCompare(a));  // descending
+  }
+
   get _filteredHarvests() {
     return this._harvests.filter(h => {
       if (this._filterProduce && h.produce_key !== this._filterProduce) return false;
 
-      if (this._filterDateFrom && h._dateISO && h._dateISO < this._filterDateFrom) return false;
-      if (this._filterDateTo && h._dateISO && h._dateISO > this._filterDateTo) return false;
+      if (this._filterYear && h._year !== this._filterYear) return false;
 
       if (this._filterWeightMin && (h.harvest_weight == null || h.harvest_weight < parseFloat(this._filterWeightMin))) return false;
       if (this._filterWeightMax && (h.harvest_weight == null || h.harvest_weight > parseFloat(this._filterWeightMax))) return false;
@@ -261,12 +337,45 @@ class HistoricalData extends LitElement {
 
   _clearFilters() {
     this._filterProduce = '';
-    this._filterDateFrom = '';
-    this._filterDateTo = '';
+    this._filterYear = '';
     this._filterWeightMin = '';
     this._filterWeightMax = '';
     this._filterTempMin = '';
     this._filterTempMax = '';
+  }
+
+  _openEdit(harvest) {
+    this._editingHarvest = harvest;
+    this._editDialogOpen = true;
+  }
+
+  _onEditDialogClosed() {
+    this._editDialogOpen = false;
+    this._editingHarvest = null;
+  }
+
+  async _onEditSubmit(e) {
+    const { harvestId, updated, resolve } = e.detail;
+    try {
+      await firebase.database().ref(`harvest/${harvestId}`).update(updated);
+      await this._loadData();
+    } catch (error) {
+      console.error('Error updating harvest:', error);
+    } finally {
+      resolve?.();
+    }
+  }
+
+  async _deleteHarvest(harvest) {
+    const label = `${harvest._produceName} — ${harvest._dateFormatted}`;
+    if (!window.confirm(`Delete "${label}"?\n\nThis cannot be undone.`)) return;
+
+    try {
+      await firebase.database().ref(`harvest/${harvest.id}`).remove();
+      await this._loadData();
+    } catch (error) {
+      console.error('Error deleting harvest:', error);
+    }
   }
 
   render() {
@@ -288,13 +397,13 @@ class HistoricalData extends LitElement {
         </div>
 
         <div class="filter-group">
-          <label>Date From</label>
-          <input type="date" .value="${this._filterDateFrom}" @change="${(e) => this._filterDateFrom = e.target.value}">
-        </div>
-
-        <div class="filter-group">
-          <label>Date To</label>
-          <input type="date" .value="${this._filterDateTo}" @change="${(e) => this._filterDateTo = e.target.value}">
+          <label>Year</label>
+          <select .value="${this._filterYear}" @change="${(e) => this._filterYear = e.target.value}">
+            <option value="">All Years</option>
+            ${map(this._yearOptions, (year) => html`
+              <option value="${year}">${year}</option>
+            `)}
+          </select>
         </div>
 
         <div class="filter-group">
@@ -324,6 +433,14 @@ class HistoricalData extends LitElement {
         ? html`<div class="loading">Loading harvest data...</div>`
         : this._renderTable()
       }
+
+      <harvest-edit-dialog
+        ?open="${this._editDialogOpen}"
+        .harvest="${this._editingHarvest}"
+        .produceReference="${this._produceReference}"
+        @harvest-edit-submit="${this._onEditSubmit}"
+        @dialog-closed="${this._onEditDialogClosed}"
+      ></harvest-edit-dialog>
     `;
   }
 
@@ -349,17 +466,28 @@ class HistoricalData extends LitElement {
               <th>Date</th>
               <th>Weight (lbs)</th>
               <th>Temperature (&deg;F)</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             ${filtered.length === 0
-              ? html`<tr><td colspan="4" style="text-align: center; color: #6B8070; padding: 32px;">No harvests match the current filters</td></tr>`
+              ? html`<tr><td colspan="5" style="text-align: center; color: #6B8070; padding: 32px;">No harvests match the current filters</td></tr>`
               : map(filtered, (harvest) => html`
                 <tr>
                   <td>${harvest._produceName}</td>
                   <td>${harvest._dateFormatted}</td>
                   <td>${harvest.harvest_weight != null ? harvest.harvest_weight : 'N/A'}</td>
                   <td>${harvest.temperature_at_harvest != null ? Math.round(harvest.temperature_at_harvest) + '\u00B0' : 'N/A'}</td>
+                  <td>
+                    <div class="actions-cell">
+                      <button class="action-btn edit" title="Edit harvest" @click="${() => this._openEdit(harvest)}">
+                        <span class="material-symbols-outlined">edit</span>
+                      </button>
+                      <button class="action-btn delete" title="Delete harvest" @click="${() => this._deleteHarvest(harvest)}">
+                        <span class="material-symbols-outlined">delete</span>
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               `)
             }
