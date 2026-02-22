@@ -243,10 +243,27 @@ class HistoricalData extends LitElement {
       font-size: 14px;
     }
 
-    .result-count {
-      padding: 8px 32px 0;
+    .section-heading {
+      padding: 24px 32px 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #2C3E2F;
+    }
+
+    .section-heading p {
+      margin: 3px 0 0 0;
       font-size: 13px;
+      font-weight: 400;
       color: #6B8070;
+    }
+
+    .totals-table td.numeric {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .totals-table td.total-weight {
+      font-weight: 600;
+      color: #2C5E34;
     }
   `;
 
@@ -309,6 +326,20 @@ class HistoricalData extends LitElement {
   get _yearOptions() {
     const years = new Set(this._harvests.map(h => h._year).filter(Boolean));
     return [...years].sort((a, b) => b.localeCompare(a));  // descending
+  }
+
+  get _totalsPerProduce() {
+    const map = new Map();
+    for (const h of this._filteredHarvests) {
+      const entry = map.get(h.produce_key) ?? { name: h._produceName, count: 0, totalWeight: 0, hasWeight: false };
+      entry.count += 1;
+      if (h.harvest_weight != null) {
+        entry.totalWeight += h.harvest_weight;
+        entry.hasWeight = true;
+      }
+      map.set(h.produce_key, entry);
+    }
+    return [...map.values()].sort((a, b) => b.totalWeight - a.totalWeight);
   }
 
   get _filteredHarvests() {
@@ -419,7 +450,51 @@ class HistoricalData extends LitElement {
     }
 
     return html`
-      <div class="result-count">${filtered.length} of ${this._harvests.length} harvests</div>
+      ${this._renderTotalsTable(filtered)}
+      ${this._renderIndividualTable(filtered)}
+    `;
+  }
+
+  _renderTotalsTable(filtered) {
+    const totals = this._totalsPerProduce;
+
+    return html`
+      <div class="section-heading">
+        Totals by Produce
+        <p>Aggregated across ${filtered.length} harvest${filtered.length !== 1 ? 's' : ''}</p>
+      </div>
+      <div class="table-container">
+        <table class="totals-table">
+          <thead>
+            <tr>
+              <th>Produce</th>
+              <th>Harvests</th>
+              <th>Total Weight (lbs)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${totals.length === 0
+              ? html`<tr><td colspan="3" style="text-align: center; color: #6B8070; padding: 32px;">No harvests match the current filters</td></tr>`
+              : map(totals, (row) => html`
+                <tr>
+                  <td>${row.name}</td>
+                  <td class="numeric">${row.count}</td>
+                  <td class="numeric total-weight">${row.hasWeight ? row.totalWeight.toFixed(2) : 'N/A'}</td>
+                </tr>
+              `)
+            }
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  _renderIndividualTable(filtered) {
+    return html`
+      <div class="section-heading">
+        Individual Harvests
+        <p>${filtered.length} of ${this._harvests.length} entries</p>
+      </div>
       <div class="table-container">
         <table>
           <thead>
