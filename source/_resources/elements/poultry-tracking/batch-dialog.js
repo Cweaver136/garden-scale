@@ -10,6 +10,7 @@ class BatchDialog extends LitElement {
     _numberOfBirds: { type: String, state: true },
     _hatchDate: { type: String, state: true },
     _dateOutToPasture: { type: String, state: true },
+    _processingDate: { type: String, state: true },
     _totalCarcassWeight: { type: String, state: true },
     _starterFeedLbs: { type: String, state: true },
     _growerFeedLbs: { type: String, state: true },
@@ -264,6 +265,7 @@ class BatchDialog extends LitElement {
     this._numberOfBirds = '';
     this._hatchDate = '';
     this._dateOutToPasture = '';
+    this._processingDate = '';
     this._totalCarcassWeight = '';
     this._starterFeedLbs = '';
     this._growerFeedLbs = '';
@@ -279,6 +281,9 @@ class BatchDialog extends LitElement {
         : '';
       this._dateOutToPasture = this.batch.date_out_to_pasture
         ? DateTime.fromMillis(this.batch.date_out_to_pasture).toISODate()
+        : '';
+      this._processingDate = this.batch.processing_date
+        ? DateTime.fromMillis(this.batch.processing_date).toISODate()
         : '';
       this._totalCarcassWeight = this.batch.total_carcass_weight != null ? String(this.batch.total_carcass_weight) : '';
       this._starterFeedLbs = this.batch.starter_feed_lbs != null ? String(this.batch.starter_feed_lbs) : '';
@@ -358,6 +363,20 @@ class BatchDialog extends LitElement {
                 .value="${this._dateOutToPasture}"
                 ?disabled="${isBusy}"
                 @input="${(e) => this._dateOutToPasture = e.target.value}"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="processingDate">
+                Processing Date
+                <span class="optional-tag">(optional)</span>
+              </label>
+              <input
+                id="processingDate"
+                type="date"
+                .value="${this._processingDate}"
+                ?disabled="${isBusy}"
+                @input="${(e) => this._processingDate = e.target.value}"
               >
             </div>
 
@@ -446,6 +465,7 @@ class BatchDialog extends LitElement {
     this._numberOfBirds = '';
     this._hatchDate = '';
     this._dateOutToPasture = '';
+    this._processingDate = '';
     this._totalCarcassWeight = '';
     this._starterFeedLbs = '';
     this._growerFeedLbs = '';
@@ -469,6 +489,9 @@ class BatchDialog extends LitElement {
 
     if (this._dateOutToPasture) {
       batch.date_out_to_pasture = DateTime.fromISO(this._dateOutToPasture).toMillis();
+    }
+    if (this._processingDate) {
+      batch.processing_date = DateTime.fromISO(this._processingDate).toMillis();
     }
     if (this._totalCarcassWeight) {
       batch.total_carcass_weight = parseFloat(this._totalCarcassWeight);
