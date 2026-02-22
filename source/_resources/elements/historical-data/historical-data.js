@@ -12,10 +12,6 @@ class HistoricalData extends LitElement {
     _loading: { type: Boolean, state: true },
     _filterProduce: { type: String, state: true },
     _filterYear: { type: String, state: true },
-    _filterWeightMin: { type: String, state: true },
-    _filterWeightMax: { type: String, state: true },
-    _filterTempMin: { type: String, state: true },
-    _filterTempMax: { type: String, state: true },
     _editDialogOpen: { type: Boolean, state: true },
     _editingHarvest: { type: Object, state: true },
   }
@@ -261,10 +257,6 @@ class HistoricalData extends LitElement {
     this._loading = true;
     this._filterProduce = '';
     this._filterYear = '';
-    this._filterWeightMin = '';
-    this._filterWeightMax = '';
-    this._filterTempMin = '';
-    this._filterTempMax = '';
     this._editDialogOpen = false;
     this._editingHarvest = null;
 
@@ -325,12 +317,6 @@ class HistoricalData extends LitElement {
 
       if (this._filterYear && h._year !== this._filterYear) return false;
 
-      if (this._filterWeightMin && (h.harvest_weight == null || h.harvest_weight < parseFloat(this._filterWeightMin))) return false;
-      if (this._filterWeightMax && (h.harvest_weight == null || h.harvest_weight > parseFloat(this._filterWeightMax))) return false;
-
-      if (this._filterTempMin && (h.temperature_at_harvest == null || h.temperature_at_harvest < parseFloat(this._filterTempMin))) return false;
-      if (this._filterTempMax && (h.temperature_at_harvest == null || h.temperature_at_harvest > parseFloat(this._filterTempMax))) return false;
-
       return true;
     });
   }
@@ -338,10 +324,6 @@ class HistoricalData extends LitElement {
   _clearFilters() {
     this._filterProduce = '';
     this._filterYear = '';
-    this._filterWeightMin = '';
-    this._filterWeightMax = '';
-    this._filterTempMin = '';
-    this._filterTempMax = '';
   }
 
   _openEdit(harvest) {
@@ -404,26 +386,6 @@ class HistoricalData extends LitElement {
               <option value="${year}">${year}</option>
             `)}
           </select>
-        </div>
-
-        <div class="filter-group">
-          <label>Weight Min (lbs)</label>
-          <input type="number" min="0" step="0.01" .value="${this._filterWeightMin}" @input="${(e) => this._filterWeightMin = e.target.value}">
-        </div>
-
-        <div class="filter-group">
-          <label>Weight Max (lbs)</label>
-          <input type="number" min="0" step="0.01" .value="${this._filterWeightMax}" @input="${(e) => this._filterWeightMax = e.target.value}">
-        </div>
-
-        <div class="filter-group">
-          <label>Temp Min (&deg;F)</label>
-          <input type="number" .value="${this._filterTempMin}" @input="${(e) => this._filterTempMin = e.target.value}">
-        </div>
-
-        <div class="filter-group">
-          <label>Temp Max (&deg;F)</label>
-          <input type="number" .value="${this._filterTempMax}" @input="${(e) => this._filterTempMax = e.target.value}">
         </div>
 
         <button class="btn-clear" @click="${this._clearFilters}">Clear Filters</button>
