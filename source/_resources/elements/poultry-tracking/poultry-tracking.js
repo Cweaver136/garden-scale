@@ -172,7 +172,7 @@ class PoultryTracking extends LitElement {
     }
 
     th.numeric {
-      text-align: right;
+      text-align: left;
     }
 
     td {
@@ -194,7 +194,7 @@ class PoultryTracking extends LitElement {
     }
 
     td.numeric {
-      text-align: right;
+      text-align: left;
       font-variant-numeric: tabular-nums;
     }
 
