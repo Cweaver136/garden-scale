@@ -10,7 +10,8 @@ class PoultryTracking extends LitElement {
     _batches: { type: Array, state: true },
     _loading: { type: Boolean, state: true },
     _dialogOpen: { type: Boolean, state: true },
-    _editingBatch: { type: Object, state: true },  // null = create mode, batch = edit mode
+    _editingBatch: { type: Object, state: true },   // null = create mode, batch = edit mode
+    _showArchived: { type: Boolean, state: true },  // false = active tab, true = archived tab
   }
 
   static styles = css`
@@ -35,7 +36,7 @@ class PoultryTracking extends LitElement {
     }
 
     .page-header {
-      padding: 28px 32px 12px;
+      padding: 28px 32px 0;
     }
 
     .header-row {
@@ -43,6 +44,7 @@ class PoultryTracking extends LitElement {
       align-items: flex-start;
       justify-content: space-between;
       gap: 16px;
+      padding-bottom: 12px;
     }
 
     .page-header h1 {
@@ -84,6 +86,57 @@ class PoultryTracking extends LitElement {
       font-size: 18px;
     }
 
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      padding: 0 32px;
+      border-bottom: 1px solid #E0E5E1;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6B8070;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+
+    .tab:hover:not(.active) {
+      color: #4A6350;
+    }
+
+    .tab.active {
+      color: #3E6B48;
+      border-bottom-color: #3E6B48;
+    }
+
+    .tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      background-color: #E8ECE9;
+      color: #4A6350;
+    }
+
+    .tab.active .tab-count {
+      background-color: #D0E8D4;
+      color: #2C5E34;
+    }
+
+    /* ── Table ── */
     .table-container {
       padding: 16px 32px 32px;
       overflow-x: auto;
@@ -134,12 +187,25 @@ class PoultryTracking extends LitElement {
       background-color: #FAFBFA;
     }
 
+    /* Archived rows are slightly muted */
+    tr.archived-row td {
+      color: #7A9282;
+    }
+
+    tr.archived-row:hover td {
+      background-color: #F8F9F8;
+    }
+
     .batch-number {
       font-weight: 600;
       color: #3E6B48;
     }
 
-    /* Action buttons in the table */
+    tr.archived-row .batch-number {
+      color: #7A9282;
+    }
+
+    /* ── Row action buttons ── */
     .actions-cell {
       display: flex;
       gap: 4px;
@@ -173,6 +239,24 @@ class PoultryTracking extends LitElement {
       color: #3E6B48;
     }
 
+    .action-btn.archive {
+      color: #6B8070;
+    }
+
+    .action-btn.archive:hover {
+      background-color: #EBF0FF;
+      color: #3B5FBF;
+    }
+
+    .action-btn.unarchive {
+      color: #6B8070;
+    }
+
+    .action-btn.unarchive:hover {
+      background-color: #E8ECE9;
+      color: #3E6B48;
+    }
+
     .action-btn.delete {
       color: #B0C0B4;
     }
@@ -182,6 +266,7 @@ class PoultryTracking extends LitElement {
       color: #C0392B;
     }
 
+    /* ── Empty & loading states ── */
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -232,8 +317,17 @@ class PoultryTracking extends LitElement {
     this._loading = true;
     this._dialogOpen = false;
     this._editingBatch = null;
+    this._showArchived = false;
 
     this._loadBatches();
+  }
+
+  get _activeBatches() {
+    return this._batches.filter(b => !b.archived);
+  }
+
+  get _archivedBatches() {
+    return this._batches.filter(b => b.archived);
   }
 
   async _loadBatches() {
@@ -266,9 +360,10 @@ class PoultryTracking extends LitElement {
     const { batch, batchId, resolve } = e.detail;
     try {
       if (batchId) {
-        // Edit: preserve original created_at
+        // Edit: preserve original created_at and archived status
         const original = this._batches.find(b => b.id === batchId);
         if (original?.created_at) batch.created_at = original.created_at;
+        if (original?.archived) batch.archived = original.archived;
         await firebase.database().ref(`poultry_batches/${batchId}`).set(batch);
       } else {
         await firebase.database().ref('poultry_batches').push(batch);
@@ -281,8 +376,26 @@ class PoultryTracking extends LitElement {
     }
   }
 
+  async _archiveBatch(batch) {
+    try {
+      await firebase.database().ref(`poultry_batches/${batch.id}/archived`).set(true);
+      await this._loadBatches();
+    } catch (error) {
+      console.error('Error archiving poultry batch:', error);
+    }
+  }
+
+  async _unarchiveBatch(batch) {
+    try {
+      await firebase.database().ref(`poultry_batches/${batch.id}/archived`).set(false);
+      await this._loadBatches();
+    } catch (error) {
+      console.error('Error unarchiving poultry batch:', error);
+    }
+  }
+
   async _deleteBatch(batch) {
-    const label = `Batch #${batch.number_of_birds} birds — ${batch._hatchDateFormatted}`;
+    const label = `${batch.number_of_birds} birds — ${batch._hatchDateFormatted}`;
     if (!window.confirm(`Delete "${label}"?\n\nThis cannot be undone.`)) return;
 
     try {
@@ -309,6 +422,9 @@ class PoultryTracking extends LitElement {
   }
 
   render() {
+    const active = this._activeBatches;
+    const archived = this._archivedBatches;
+
     return html`
       <div class="page-header">
         <div class="header-row">
@@ -323,9 +439,24 @@ class PoultryTracking extends LitElement {
         </div>
       </div>
 
+      <div class="tabs">
+        <div
+          class="tab ${!this._showArchived ? 'active' : ''}"
+          @click="${() => this._showArchived = false}">
+          Active
+          <span class="tab-count">${active.length}</span>
+        </div>
+        <div
+          class="tab ${this._showArchived ? 'active' : ''}"
+          @click="${() => this._showArchived = true}">
+          Archived
+          <span class="tab-count">${archived.length}</span>
+        </div>
+      </div>
+
       ${this._loading
         ? html`<div class="loading">Loading batches…</div>`
-        : this._renderContent()
+        : this._renderContent(this._showArchived ? archived : active)
       }
 
       <batch-dialog
@@ -338,19 +469,28 @@ class PoultryTracking extends LitElement {
     `;
   }
 
-  _renderContent() {
-    if (this._batches.length === 0) {
+  _renderContent(batches) {
+    if (batches.length === 0) {
+      if (this._showArchived) {
+        return html`
+          <div class="empty-state">
+            <span class="icon material-symbols-outlined">archive</span>
+            <p>No archived batches</p>
+            <p class="empty-hint">Batches you archive will appear here</p>
+          </div>
+        `;
+      }
       return html`
         <div class="empty-state">
           <span class="icon material-symbols-outlined">egg</span>
-          <p>No batches recorded yet</p>
+          <p>No active batches</p>
           <p class="empty-hint">Click "New Batch" to record your first poultry batch</p>
         </div>
       `;
     }
 
     return html`
-      <div class="batch-count">${this._batches.length} batch${this._batches.length !== 1 ? 'es' : ''}</div>
+      <div class="batch-count">${batches.length} batch${batches.length !== 1 ? 'es' : ''}</div>
       <div class="table-container">
         <table>
           <thead>
@@ -366,9 +506,9 @@ class PoultryTracking extends LitElement {
             </tr>
           </thead>
           <tbody>
-            ${map(this._batches, (batch, index) => html`
-              <tr>
-                <td class="batch-number">${this._batches.length - index}</td>
+            ${map(batches, (batch, index) => html`
+              <tr class="${batch.archived ? 'archived-row' : ''}">
+                <td class="batch-number">${batches.length - index}</td>
                 <td>${batch._hatchDateFormatted}</td>
                 <td>${batch.number_of_birds}</td>
                 <td class="${batch.date_out_to_pasture == null ? 'dim' : ''}">${batch._pastureDateFormatted}</td>
@@ -386,6 +526,18 @@ class PoultryTracking extends LitElement {
                     <button class="action-btn edit" title="Edit batch" @click="${() => this._openEdit(batch)}">
                       <span class="material-symbols-outlined">edit</span>
                     </button>
+                    ${batch.archived
+                      ? html`
+                        <button class="action-btn unarchive" title="Restore batch" @click="${() => this._unarchiveBatch(batch)}">
+                          <span class="material-symbols-outlined">unarchive</span>
+                        </button>
+                      `
+                      : html`
+                        <button class="action-btn archive" title="Archive batch" @click="${() => this._archiveBatch(batch)}">
+                          <span class="material-symbols-outlined">archive</span>
+                        </button>
+                      `
+                    }
                     <button class="action-btn delete" title="Delete batch" @click="${() => this._deleteBatch(batch)}">
                       <span class="material-symbols-outlined">delete</span>
                     </button>
