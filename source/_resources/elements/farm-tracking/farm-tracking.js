@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import '../record-harvest/record-harvest.js';
 import '../historical-data/historical-data.js';
+import '../poultry-tracking/poultry-tracking.js';
 
 class FarmTracking extends LitElement {
 
@@ -325,13 +326,7 @@ class FarmTracking extends LitElement {
           </div>
         `;
       case 'poultry':
-        return html`
-          <div class="placeholder-page">
-            <span class="icon material-symbols-outlined">egg</span>
-            <h2>Poultry</h2>
-            <p>Poultry performance tracking is coming soon.</p>
-          </div>
-        `;
+        return html`<poultry-tracking></poultry-tracking>`;
       default:
         return html`<record-harvest></record-harvest>`;
     }
