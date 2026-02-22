@@ -6,13 +6,14 @@ import "firebase/compat/database";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyAQWaOJ6TkdV25ZRuQ-JpeK9-bcEpM9MCM",
-  authDomain: "garden-scale.firebaseapp.com",
-  databaseURL: "https://garden-scale-default-rtdb.firebaseio.com",
-  projectId: "garden-scale",
-  storageBucket: "garden-scale.firebasestorage.app",
-  messagingSenderId: "341969912898",
-  appId: "1:341969912898:web:3b05f144c21e7303c119db"
+  apiKey: "AIzaSyDuWu3dL2mpsem426-ygMvb1R2ZfnJ5-pQ",
+  authDomain: "weaver-farms.firebaseapp.com",
+  databaseURL: "https://weaver-farms-default-rtdb.firebaseio.com",
+  projectId: "weaver-farms",
+  storageBucket: "weaver-farms.firebasestorage.app",
+  messagingSenderId: "787561428317",
+  appId: "1:787561428317:web:ed90a1fd08ea9bc6fd24b4",
+  measurementId: "G-PKEXB01Q9F"
 };
 
 // Initialize Firebase
