@@ -2,9 +2,9 @@ import { LitElement, html, css } from 'lit';
 import { map } from 'lit/directives/map.js';
 import { firebase } from '../../../../firebaseConfig.js';
 import { DateTime } from 'luxon';
-import '../harvest-dialog/harvest-dialog.js';
+import './harvest-dialog.js';
 
-class ProduceSelection extends LitElement {
+class RecordHarvest extends LitElement {
 
   static properties = {
     produceReference: { type: Object },
@@ -148,4 +148,4 @@ class ProduceSelection extends LitElement {
   }
 }
 
-customElements.define('produce-selection', ProduceSelection);
+customElements.define('record-harvest', RecordHarvest);

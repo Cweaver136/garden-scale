@@ -1,8 +1,8 @@
 import { LitElement, html, css } from 'lit';
-import '../produce-selection/produce-selection.js';
+import '../record-harvest/record-harvest.js';
 import '../historical-data/historical-data.js';
 
-class GardenApp extends LitElement {
+class FarmTracking extends LitElement {
 
   static properties = {
     currentView: { type: String },
@@ -224,7 +224,7 @@ class GardenApp extends LitElement {
 
   _getViewFromHash() {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['record-harvest', 'historical-data', 'farm-financials', 'poultry'];
+    const validViews = ['record-harvest', 'historical-data', 'poultry', 'farm-financials'];
     return validViews.includes(hash) ? hash : 'record-harvest';
   }
 
@@ -290,12 +290,12 @@ class GardenApp extends LitElement {
               </div>
             </div>
 
-            <!-- Financials (direct link, no dropdown) -->
+            <!-- financials (direct link, no dropdown) -->
             <div
               class="nav-btn ${this.currentView === 'farm-financials' ? 'active' : ''}"
               @click="${() => this._navigate('farm-financials')}">
               <span class="material-symbols-outlined">account_balance</span>
-              Financials
+              Farm Financials
             </div>
 
           </nav>
@@ -313,7 +313,7 @@ class GardenApp extends LitElement {
   _renderCurrentView() {
     switch (this.currentView) {
       case 'record-harvest':
-        return html`<produce-selection></produce-selection>`;
+        return html`<record-harvest></record-harvest>`;
       case 'historical-data':
         return html`<historical-data></historical-data>`;
       case 'farm-financials':
@@ -333,9 +333,9 @@ class GardenApp extends LitElement {
           </div>
         `;
       default:
-        return html`<produce-selection></produce-selection>`;
+        return html`<record-harvest></record-harvest>`;
     }
   }
 }
 
-customElements.define('garden-app', GardenApp);
+customElements.define('farm-tracking', FarmTracking);
