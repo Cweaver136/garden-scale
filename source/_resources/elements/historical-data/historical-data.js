@@ -265,6 +265,31 @@ class HistoricalData extends LitElement {
       font-weight: 600;
       color: #2C5E34;
     }
+
+    .sections-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+      padding: 0 32px 32px;
+    }
+
+    .sections-row .section {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .sections-row .section:first-child {
+      flex: 0 0 340px;
+      margin-right: 24px;
+    }
+
+    .sections-row .section .section-heading {
+      padding: 24px 0 0;
+    }
+
+    .sections-row .section .table-container {
+      padding: 16px 0 0;
+    }
   `;
 
   constructor() {
@@ -450,8 +475,10 @@ class HistoricalData extends LitElement {
     }
 
     return html`
-      ${this._renderTotalsTable(filtered)}
-      ${this._renderIndividualTable(filtered)}
+      <div class="sections-row">
+        <div class="section">${this._renderTotalsTable(filtered)}</div>
+        <div class="section">${this._renderIndividualTable(filtered)}</div>
+      </div>
     `;
   }
 
