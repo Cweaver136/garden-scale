@@ -152,7 +152,7 @@ class PoultryTracking extends LitElement {
       border-radius: 10px;
       overflow: hidden;
       border: 1px solid #E0E5E1;
-      min-width: 1050px;
+      min-width: 820px;
     }
 
     thead {
@@ -233,6 +233,7 @@ class PoultryTracking extends LitElement {
       display: flex;
       gap: 4px;
       align-items: center;
+      justify-content: flex-end;
     }
 
     .action-btn {
@@ -567,8 +568,6 @@ class PoultryTracking extends LitElement {
               <th>Birds</th>
               <th>Date to Pasture</th>
               <th class="numeric">Carcass Wt (lbs)</th>
-              <th class="numeric">Starter Feed (lbs)</th>
-              <th class="numeric">Grower Feed (lbs)</th>
               <th class="numeric">Total Cost</th>
               <th class="numeric">Cost / Bird</th>
               <th></th>
@@ -583,12 +582,6 @@ class PoultryTracking extends LitElement {
                 <td class="${batch.date_out_to_pasture == null ? 'dim' : ''}">${batch._pastureDateFormatted}</td>
                 <td class="numeric ${batch.total_carcass_weight == null ? 'dim' : ''}">
                   ${batch.total_carcass_weight != null ? batch.total_carcass_weight : '—'}
-                </td>
-                <td class="numeric ${batch.starter_feed_lbs == null ? 'dim' : ''}">
-                  ${batch.starter_feed_lbs != null ? batch.starter_feed_lbs : '—'}
-                </td>
-                <td class="numeric ${batch.grower_feed_lbs == null ? 'dim' : ''}">
-                  ${batch.grower_feed_lbs != null ? batch.grower_feed_lbs : '—'}
                 </td>
                 <td class="numeric">
                   ${batch._totalCost > 0
