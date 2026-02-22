@@ -5,6 +5,8 @@ class BatchDialog extends LitElement {
 
   static properties = {
     open: { type: Boolean, reflect: true },
+    batchId: { type: String },    // null = create, string = edit
+    batch: { type: Object },      // existing batch data when editing
     _numberOfBirds: { type: String, state: true },
     _hatchDate: { type: String, state: true },
     _dateOutToPasture: { type: String, state: true },
@@ -15,6 +17,21 @@ class BatchDialog extends LitElement {
   }
 
   static styles = css`
+    /* Icon font — must be declared inside each shadow root */
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+
     :host {
       display: none;
     }
@@ -242,6 +259,8 @@ class BatchDialog extends LitElement {
   constructor() {
     super();
     this.open = false;
+    this.batchId = null;
+    this.batch = null;
     this._numberOfBirds = '';
     this._hatchDate = '';
     this._dateOutToPasture = '';
@@ -249,6 +268,26 @@ class BatchDialog extends LitElement {
     this._starterFeedLbs = '';
     this._growerFeedLbs = '';
     this._submitState = 'idle';
+  }
+
+  willUpdate(changedProperties) {
+    // When the batch prop is set (edit mode), populate form fields
+    if (changedProperties.has('batch') && this.batch) {
+      this._numberOfBirds = this.batch.number_of_birds != null ? String(this.batch.number_of_birds) : '';
+      this._hatchDate = this.batch.hatch_date
+        ? DateTime.fromMillis(this.batch.hatch_date).toISODate()
+        : '';
+      this._dateOutToPasture = this.batch.date_out_to_pasture
+        ? DateTime.fromMillis(this.batch.date_out_to_pasture).toISODate()
+        : '';
+      this._totalCarcassWeight = this.batch.total_carcass_weight != null ? String(this.batch.total_carcass_weight) : '';
+      this._starterFeedLbs = this.batch.starter_feed_lbs != null ? String(this.batch.starter_feed_lbs) : '';
+      this._growerFeedLbs = this.batch.grower_feed_lbs != null ? String(this.batch.grower_feed_lbs) : '';
+    }
+  }
+
+  get _isEditing() {
+    return !!this.batchId;
   }
 
   get _isValid() {
@@ -267,10 +306,12 @@ class BatchDialog extends LitElement {
         <div class="dialog" @click="${(e) => e.stopPropagation()}">
 
           <div class="dialog-header">
-            <span class="material-symbols-outlined dialog-header-icon">egg</span>
+            <span class="material-symbols-outlined dialog-header-icon">
+              ${this._isEditing ? 'edit' : 'egg'}
+            </span>
             <div class="dialog-header-text">
-              <h3>New Poultry Batch</h3>
-              <p>Enter the details for this batch of birds</p>
+              <h3>${this._isEditing ? 'Edit Poultry Batch' : 'New Poultry Batch'}</h3>
+              <p>${this._isEditing ? 'Update the details for this batch' : 'Enter the details for this batch of birds'}</p>
             </div>
           </div>
 
@@ -381,6 +422,7 @@ class BatchDialog extends LitElement {
               @click="${this._submit}">
               ${isLoading ? html`<span class="spinner"></span> Saving…`
                 : isSuccess ? html`<span class="checkmark">✓</span> Saved!`
+                : this._isEditing ? 'Save Changes'
                 : 'Save Batch'}
             </button>
           </div>
@@ -418,8 +460,12 @@ class BatchDialog extends LitElement {
     const batch = {
       number_of_birds: parseInt(this._numberOfBirds),
       hatch_date: DateTime.fromISO(this._hatchDate).toMillis(),
-      created_at: Date.now(),
     };
+
+    // Preserve original created_at on edits; set it fresh on creates
+    if (!this._isEditing) {
+      batch.created_at = Date.now();
+    }
 
     if (this._dateOutToPasture) {
       batch.date_out_to_pasture = DateTime.fromISO(this._dateOutToPasture).toMillis();
@@ -437,6 +483,7 @@ class BatchDialog extends LitElement {
     this.dispatchEvent(new CustomEvent('batch-submit', {
       detail: {
         batch,
+        batchId: this.batchId || null,
         resolve: () => this._onWriteComplete(),
       }
     }));

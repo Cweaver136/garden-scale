@@ -10,9 +10,25 @@ class PoultryTracking extends LitElement {
     _batches: { type: Array, state: true },
     _loading: { type: Boolean, state: true },
     _dialogOpen: { type: Boolean, state: true },
+    _editingBatch: { type: Object, state: true },  // null = create mode, batch = edit mode
   }
 
   static styles = css`
+    /* Icon font — must be declared inside each shadow root */
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+
     :host {
       display: block;
       height: 100%;
@@ -80,7 +96,7 @@ class PoultryTracking extends LitElement {
       border-radius: 10px;
       overflow: hidden;
       border: 1px solid #E0E5E1;
-      min-width: 700px;
+      min-width: 800px;
     }
 
     thead {
@@ -121,6 +137,49 @@ class PoultryTracking extends LitElement {
     .batch-number {
       font-weight: 600;
       color: #3E6B48;
+    }
+
+    /* Action buttons in the table */
+    .actions-cell {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+      padding: 0;
+    }
+
+    .action-btn .material-symbols-outlined {
+      font-size: 17px;
+    }
+
+    .action-btn.edit {
+      color: #6B8070;
+    }
+
+    .action-btn.edit:hover {
+      background-color: #E8ECE9;
+      color: #3E6B48;
+    }
+
+    .action-btn.delete {
+      color: #B0C0B4;
+    }
+
+    .action-btn.delete:hover {
+      background-color: #FDECEA;
+      color: #C0392B;
     }
 
     .empty-state {
@@ -172,6 +231,7 @@ class PoultryTracking extends LitElement {
     this._batches = [];
     this._loading = true;
     this._dialogOpen = false;
+    this._editingBatch = null;
 
     this._loadBatches();
   }
@@ -203,15 +263,49 @@ class PoultryTracking extends LitElement {
   }
 
   async _onBatchSubmit(e) {
-    const { batch, resolve } = e.detail;
+    const { batch, batchId, resolve } = e.detail;
     try {
-      await firebase.database().ref('poultry_batches').push(batch);
+      if (batchId) {
+        // Edit: preserve original created_at
+        const original = this._batches.find(b => b.id === batchId);
+        if (original?.created_at) batch.created_at = original.created_at;
+        await firebase.database().ref(`poultry_batches/${batchId}`).set(batch);
+      } else {
+        await firebase.database().ref('poultry_batches').push(batch);
+      }
       await this._loadBatches();
     } catch (error) {
       console.error('Error saving poultry batch:', error);
     } finally {
       resolve?.();
     }
+  }
+
+  async _deleteBatch(batch) {
+    const label = `Batch #${batch.number_of_birds} birds — ${batch._hatchDateFormatted}`;
+    if (!window.confirm(`Delete "${label}"?\n\nThis cannot be undone.`)) return;
+
+    try {
+      await firebase.database().ref(`poultry_batches/${batch.id}`).remove();
+      await this._loadBatches();
+    } catch (error) {
+      console.error('Error deleting poultry batch:', error);
+    }
+  }
+
+  _openEdit(batch) {
+    this._editingBatch = batch;
+    this._dialogOpen = true;
+  }
+
+  _openCreate() {
+    this._editingBatch = null;
+    this._dialogOpen = true;
+  }
+
+  _onDialogClosed() {
+    this._dialogOpen = false;
+    this._editingBatch = null;
   }
 
   render() {
@@ -222,7 +316,7 @@ class PoultryTracking extends LitElement {
             <h1>Poultry Batches</h1>
             <p>Track and manage your poultry production batches</p>
           </div>
-          <button class="btn-new-batch" @click="${() => this._dialogOpen = true}">
+          <button class="btn-new-batch" @click="${this._openCreate}">
             <span class="material-symbols-outlined">add_circle</span>
             New Batch
           </button>
@@ -236,8 +330,10 @@ class PoultryTracking extends LitElement {
 
       <batch-dialog
         ?open="${this._dialogOpen}"
+        .batchId="${this._editingBatch?.id ?? null}"
+        .batch="${this._editingBatch}"
         @batch-submit="${this._onBatchSubmit}"
-        @dialog-closed="${() => this._dialogOpen = false}"
+        @dialog-closed="${this._onDialogClosed}"
       ></batch-dialog>
     `;
   }
@@ -266,6 +362,7 @@ class PoultryTracking extends LitElement {
               <th>Carcass Wt (lbs)</th>
               <th>Starter Feed (lbs)</th>
               <th>Grower Feed (lbs)</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -283,6 +380,16 @@ class PoultryTracking extends LitElement {
                 </td>
                 <td class="${batch.grower_feed_lbs == null ? 'dim' : ''}">
                   ${batch.grower_feed_lbs != null ? batch.grower_feed_lbs : '—'}
+                </td>
+                <td>
+                  <div class="actions-cell">
+                    <button class="action-btn edit" title="Edit batch" @click="${() => this._openEdit(batch)}">
+                      <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button class="action-btn delete" title="Delete batch" @click="${() => this._deleteBatch(batch)}">
+                      <span class="material-symbols-outlined">delete</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
             `)}
