@@ -180,6 +180,13 @@ class PoultryTracking extends LitElement {
       font-size: 14px;
       color: #2C3E2F;
       border-bottom: 1px solid #F0F3F0;
+      white-space: nowrap;
+    }
+
+    /* Actions column shrinks to its content so date columns don't gap */
+    th:last-child,
+    td:last-child {
+      width: 1px;
     }
 
     td.dim {
@@ -240,18 +247,18 @@ class PoultryTracking extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 30px;
-      height: 30px;
-      border: none;
-      border-radius: 6px;
-      background: transparent;
+      width: 34px;
+      height: 34px;
+      border: 1px solid #E0E5E1;
+      border-radius: 8px;
+      background: #F5F7F3;
       cursor: pointer;
-      transition: background-color 0.15s, color 0.15s;
+      transition: background-color 0.15s, color 0.15s, border-color 0.15s;
       padding: 0;
     }
 
     .action-btn .material-symbols-outlined {
-      font-size: 17px;
+      font-size: 18px;
     }
 
     .action-btn.edit {
@@ -260,6 +267,7 @@ class PoultryTracking extends LitElement {
 
     .action-btn.edit:hover {
       background-color: #E8ECE9;
+      border-color: #B8D4BC;
       color: #3E6B48;
     }
 
@@ -269,6 +277,7 @@ class PoultryTracking extends LitElement {
 
     .action-btn.expenses:hover {
       background-color: #FFF6E0;
+      border-color: #E8C96A;
       color: #9A6E00;
     }
 
@@ -278,6 +287,7 @@ class PoultryTracking extends LitElement {
 
     .action-btn.archive:hover {
       background-color: #EBF0FF;
+      border-color: #A0B4E8;
       color: #3B5FBF;
     }
 
@@ -287,6 +297,7 @@ class PoultryTracking extends LitElement {
 
     .action-btn.unarchive:hover {
       background-color: #E8ECE9;
+      border-color: #B8D4BC;
       color: #3E6B48;
     }
 
@@ -296,6 +307,7 @@ class PoultryTracking extends LitElement {
 
     .action-btn.delete:hover {
       background-color: #FDECEA;
+      border-color: #F0A8A0;
       color: #C0392B;
     }
 
