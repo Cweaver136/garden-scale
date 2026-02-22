@@ -3,6 +3,7 @@ import { map } from 'lit/directives/map.js';
 import { firebase } from '../../../../firebaseConfig.js';
 import { DateTime } from 'luxon';
 import './batch-dialog.js';
+import './expense-dialog.js';
 
 class PoultryTracking extends LitElement {
 
@@ -10,8 +11,10 @@ class PoultryTracking extends LitElement {
     _batches: { type: Array, state: true },
     _loading: { type: Boolean, state: true },
     _dialogOpen: { type: Boolean, state: true },
-    _editingBatch: { type: Object, state: true },   // null = create mode, batch = edit mode
-    _showArchived: { type: Boolean, state: true },  // false = active tab, true = archived tab
+    _editingBatch: { type: Object, state: true },    // null = create mode, batch = edit mode
+    _showArchived: { type: Boolean, state: true },   // false = active tab, true = archived tab
+    _expensesDialogOpen: { type: Boolean, state: true },
+    _expensesBatch: { type: Object, state: true },   // batch whose expenses are open
   }
 
   static styles = css`
@@ -149,7 +152,7 @@ class PoultryTracking extends LitElement {
       border-radius: 10px;
       overflow: hidden;
       border: 1px solid #E0E5E1;
-      min-width: 800px;
+      min-width: 1050px;
     }
 
     thead {
@@ -168,6 +171,10 @@ class PoultryTracking extends LitElement {
       white-space: nowrap;
     }
 
+    th.numeric {
+      text-align: right;
+    }
+
     td {
       padding: 12px 16px;
       font-size: 14px;
@@ -177,6 +184,11 @@ class PoultryTracking extends LitElement {
 
     td.dim {
       color: #A3B5A8;
+    }
+
+    td.numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
     }
 
     tr:last-child td {
@@ -203,6 +215,17 @@ class PoultryTracking extends LitElement {
 
     tr.archived-row .batch-number {
       color: #7A9282;
+    }
+
+    /* Cost columns */
+    .cost-value {
+      color: #2C5E34;
+      font-weight: 500;
+    }
+
+    tr.archived-row .cost-value {
+      color: #7A9282;
+      font-weight: 400;
     }
 
     /* ── Row action buttons ── */
@@ -237,6 +260,15 @@ class PoultryTracking extends LitElement {
     .action-btn.edit:hover {
       background-color: #E8ECE9;
       color: #3E6B48;
+    }
+
+    .action-btn.expenses {
+      color: #6B8070;
+    }
+
+    .action-btn.expenses:hover {
+      background-color: #FFF6E0;
+      color: #9A6E00;
     }
 
     .action-btn.archive {
@@ -318,6 +350,8 @@ class PoultryTracking extends LitElement {
     this._dialogOpen = false;
     this._editingBatch = null;
     this._showArchived = false;
+    this._expensesDialogOpen = false;
+    this._expensesBatch = null;
 
     this._loadBatches();
   }
@@ -336,16 +370,28 @@ class PoultryTracking extends LitElement {
       const snap = await firebase.database().ref('poultry_batches').once('value');
       const data = snap.val();
       if (data) {
-        this._batches = Object.entries(data).map(([id, record]) => ({
-          id,
-          ...record,
-          _hatchDateFormatted: record.hatch_date
-            ? DateTime.fromMillis(record.hatch_date).toFormat('MMM d, yyyy')
-            : '—',
-          _pastureDateFormatted: record.date_out_to_pasture
-            ? DateTime.fromMillis(record.date_out_to_pasture).toFormat('MMM d, yyyy')
-            : '—',
-        })).sort((a, b) => (b.hatch_date || 0) - (a.hatch_date || 0));
+        this._batches = Object.entries(data).map(([id, record]) => {
+          const expenses = record.expenses
+            ? Object.values(record.expenses)
+            : [];
+          const totalCost = expenses.reduce((sum, e) => sum + (e.cost || 0), 0);
+          const costPerBird = record.number_of_birds && totalCost > 0
+            ? totalCost / record.number_of_birds
+            : null;
+
+          return {
+            id,
+            ...record,
+            _hatchDateFormatted: record.hatch_date
+              ? DateTime.fromMillis(record.hatch_date).toFormat('MMM d, yyyy')
+              : '—',
+            _pastureDateFormatted: record.date_out_to_pasture
+              ? DateTime.fromMillis(record.date_out_to_pasture).toFormat('MMM d, yyyy')
+              : '—',
+            _totalCost: totalCost,
+            _costPerBird: costPerBird,
+          };
+        }).sort((a, b) => (b.hatch_date || 0) - (a.hatch_date || 0));
       } else {
         this._batches = [];
       }
@@ -421,6 +467,20 @@ class PoultryTracking extends LitElement {
     this._editingBatch = null;
   }
 
+  _openExpenses(batch) {
+    this._expensesBatch = batch;
+    this._expensesDialogOpen = true;
+  }
+
+  _onExpensesDialogClosed() {
+    this._expensesDialogOpen = false;
+    this._expensesBatch = null;
+  }
+
+  async _onExpensesChanged() {
+    await this._loadBatches();
+  }
+
   render() {
     const active = this._activeBatches;
     const archived = this._archivedBatches;
@@ -466,6 +526,13 @@ class PoultryTracking extends LitElement {
         @batch-submit="${this._onBatchSubmit}"
         @dialog-closed="${this._onDialogClosed}"
       ></batch-dialog>
+
+      <expense-dialog
+        ?open="${this._expensesDialogOpen}"
+        .batch="${this._expensesBatch}"
+        @expenses-changed="${this._onExpensesChanged}"
+        @dialog-closed="${this._onExpensesDialogClosed}"
+      ></expense-dialog>
     `;
   }
 
@@ -499,9 +566,11 @@ class PoultryTracking extends LitElement {
               <th>Hatch Date</th>
               <th>Birds</th>
               <th>Date to Pasture</th>
-              <th>Carcass Wt (lbs)</th>
-              <th>Starter Feed (lbs)</th>
-              <th>Grower Feed (lbs)</th>
+              <th class="numeric">Carcass Wt (lbs)</th>
+              <th class="numeric">Starter Feed (lbs)</th>
+              <th class="numeric">Grower Feed (lbs)</th>
+              <th class="numeric">Total Cost</th>
+              <th class="numeric">Cost / Bird</th>
               <th></th>
             </tr>
           </thead>
@@ -512,19 +581,34 @@ class PoultryTracking extends LitElement {
                 <td>${batch._hatchDateFormatted}</td>
                 <td>${batch.number_of_birds}</td>
                 <td class="${batch.date_out_to_pasture == null ? 'dim' : ''}">${batch._pastureDateFormatted}</td>
-                <td class="${batch.total_carcass_weight == null ? 'dim' : ''}">
+                <td class="numeric ${batch.total_carcass_weight == null ? 'dim' : ''}">
                   ${batch.total_carcass_weight != null ? batch.total_carcass_weight : '—'}
                 </td>
-                <td class="${batch.starter_feed_lbs == null ? 'dim' : ''}">
+                <td class="numeric ${batch.starter_feed_lbs == null ? 'dim' : ''}">
                   ${batch.starter_feed_lbs != null ? batch.starter_feed_lbs : '—'}
                 </td>
-                <td class="${batch.grower_feed_lbs == null ? 'dim' : ''}">
+                <td class="numeric ${batch.grower_feed_lbs == null ? 'dim' : ''}">
                   ${batch.grower_feed_lbs != null ? batch.grower_feed_lbs : '—'}
+                </td>
+                <td class="numeric">
+                  ${batch._totalCost > 0
+                    ? html`<span class="cost-value">$${batch._totalCost.toFixed(2)}</span>`
+                    : html`<span class="dim">—</span>`
+                  }
+                </td>
+                <td class="numeric">
+                  ${batch._costPerBird != null
+                    ? html`<span class="cost-value">$${batch._costPerBird.toFixed(2)}</span>`
+                    : html`<span class="dim">—</span>`
+                  }
                 </td>
                 <td>
                   <div class="actions-cell">
                     <button class="action-btn edit" title="Edit batch" @click="${() => this._openEdit(batch)}">
                       <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button class="action-btn expenses" title="Manage expenses" @click="${() => this._openExpenses(batch)}">
+                      <span class="material-symbols-outlined">receipt_long</span>
                     </button>
                     ${batch.archived
                       ? html`
