@@ -298,7 +298,7 @@ class HistoricalData extends LitElement {
     this._produceReference = {};
     this._loading = true;
     this._filterProduce = '';
-    this._filterYear = '';
+    this._filterYear = String(new Date().getFullYear());
     this._editDialogOpen = false;
     this._editingHarvest = null;
 
