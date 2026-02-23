@@ -529,19 +529,17 @@ class HistoricalData extends LitElement {
               <th>Produce</th>
               <th>Date</th>
               <th>Weight (lbs)</th>
-              <th>Temperature (&deg;F)</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             ${filtered.length === 0
-              ? html`<tr><td colspan="5" style="text-align: center; color: #6B8070; padding: 32px;">No harvests match the current filters</td></tr>`
+              ? html`<tr><td colspan="4" style="text-align: center; color: #6B8070; padding: 32px;">No harvests match the current filters</td></tr>`
               : map(filtered, (harvest) => html`
                 <tr>
                   <td>${harvest._produceName}</td>
                   <td>${harvest._dateFormatted}</td>
                   <td>${harvest.harvest_weight != null ? harvest.harvest_weight : 'N/A'}</td>
-                  <td>${harvest.temperature_at_harvest != null ? Math.round(harvest.temperature_at_harvest) + '\u00B0' : 'N/A'}</td>
                   <td>
                     <div class="actions-cell">
                       <button class="action-btn edit" title="Edit harvest" @click="${() => this._openEdit(harvest)}">

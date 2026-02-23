@@ -339,18 +339,11 @@ class HarvestEditDialog extends LitElement {
             </div>
 
             <div class="form-group">
-              <label for="temperature">
-                Temperature (&deg;F)
-                <span class="optional-tag">(optional)</span>
-              </label>
+              <label>Temperature (&deg;F)</label>
               <input
-                id="temperature"
-                type="number"
-                step="0.1"
-                placeholder="e.g. 72.5"
-                .value="${this._temperature}"
-                ?disabled="${isBusy}"
-                @input="${(e) => this._temperature = e.target.value}"
+                type="text"
+                readonly
+                .value="${this._temperature ? Math.round(parseFloat(this._temperature)) + '\u00B0F' : 'N/A'}"
               >
             </div>
 
@@ -395,9 +388,6 @@ class HarvestEditDialog extends LitElement {
 
     if (this._weight) {
       updated.harvest_weight = parseFloat(this._weight);
-    }
-    if (this._temperature) {
-      updated.temperature_at_harvest = parseFloat(this._temperature);
     }
 
     this.dispatchEvent(new CustomEvent('harvest-edit-submit', {
