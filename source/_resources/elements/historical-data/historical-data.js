@@ -92,7 +92,7 @@ class HistoricalData extends LitElement {
 
     .filter-group select:focus,
     .filter-group input:focus {
-      border-color: #C96B1A;
+      border-color: #3E6B48;
     }
 
     .filter-group select {
@@ -199,9 +199,9 @@ class HistoricalData extends LitElement {
     }
 
     .action-btn.edit:hover {
-      background-color: #FEE8D0;
-      border-color: #F0B882;
-      color: #C96B1A;
+      background-color: #E8ECE9;
+      border-color: #B8D4BC;
+      color: #3E6B48;
     }
 
     .action-btn.delete {
@@ -263,7 +263,7 @@ class HistoricalData extends LitElement {
 
     .totals-table td.total-weight {
       font-weight: 600;
-      color: #A04A10;
+      color: #2C5E34;
     }
 
     .sections-row {

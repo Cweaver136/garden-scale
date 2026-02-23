@@ -87,7 +87,7 @@ class HarvestEditDialog extends LitElement {
 
     .dialog-header-icon {
       font-size: 26px;
-      color: #C96B1A;
+      color: #3E6B48;
     }
 
     .dialog-header-text h3 {
@@ -145,8 +145,8 @@ class HarvestEditDialog extends LitElement {
 
     .form-group input:focus,
     .form-group select:focus {
-      border-color: #C96B1A;
-      box-shadow: 0 0 0 3px rgba(201, 107, 26, 0.12);
+      border-color: #3E6B48;
+      box-shadow: 0 0 0 3px rgba(62, 107, 72, 0.12);
     }
 
     .form-group input::placeholder {
@@ -201,13 +201,13 @@ class HarvestEditDialog extends LitElement {
       gap: 8px;
       min-width: 130px;
       justify-content: center;
-      background-color: #C96B1A;
+      background-color: #3E6B48;
       border: none;
       color: #FFFFFF;
     }
 
     .btn-submit:hover:not(:disabled) {
-      background-color: #A85515;
+      background-color: #345A3D;
     }
 
     .btn-submit:disabled {
@@ -216,11 +216,11 @@ class HarvestEditDialog extends LitElement {
     }
 
     .btn-submit.loading {
-      background-color: #C98040;
+      background-color: #5A8065;
     }
 
     .btn-submit.success {
-      background-color: #C06010;
+      background-color: #2D7A3A;
       transition: background-color 0.3s;
     }
 
