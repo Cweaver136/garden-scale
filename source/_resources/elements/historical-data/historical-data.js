@@ -528,7 +528,7 @@ class HistoricalData extends LitElement {
             <tr>
               <th>Produce</th>
               <th>Date</th>
-              <th>Weight (lbs)</th>
+              <th>Amount</th>
               <th></th>
             </tr>
           </thead>
@@ -539,7 +539,7 @@ class HistoricalData extends LitElement {
                 <tr>
                   <td>${harvest._produceName}</td>
                   <td>${harvest._dateFormatted}</td>
-                  <td>${harvest.harvest_weight != null ? harvest.harvest_weight : 'N/A'}</td>
+                  <td>${harvest.harvest_weight != null ? `${harvest.harvest_weight} lbs` : harvest.harvest_count != null ? `${harvest.harvest_count} ct` : 'N/A'}</td>
                   <td>
                     <div class="actions-cell">
                       <button class="action-btn edit" title="Edit harvest" @click="${() => this._openEdit(harvest)}">

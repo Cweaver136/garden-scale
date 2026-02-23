@@ -10,7 +10,9 @@ class GardenTracker extends LitElement {
     _loading: { type: Boolean, state: true },
     _selected: { type: Object, state: true },    // { key, name, image } | null
     _pickerOpen: { type: Boolean, state: true },
+    _measureMode: { type: String, state: true }, // 'lbs' | 'lbs_oz' | 'count'
     _weight: { type: String, state: true },
+    _weightOz: { type: String, state: true },
     _submitState: { type: String, state: true },  // 'idle' | 'loading' | 'success'
   }
 
@@ -81,6 +83,15 @@ class GardenTracker extends LitElement {
       min-height: 0;
     }
 
+    /* ── Field label row (label + mode cycle button) ── */
+    .field-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-shrink: 0;
+    }
+
     .field-label {
       font-size: 13px;
       font-weight: 600;
@@ -89,6 +100,52 @@ class GardenTracker extends LitElement {
       letter-spacing: 0.5px;
       margin-bottom: 8px;
       flex-shrink: 0;
+    }
+
+    .field-label-row .field-label {
+      margin-bottom: 0;
+    }
+
+    /* ── Mode cycle button ── */
+    .mode-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 12px;
+      border: 1px solid #C8D5CB;
+      border-radius: 20px;
+      background: #FFFFFF;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'Roboto', sans-serif;
+      color: #4A6350;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background-color 0.15s, border-color 0.15s;
+    }
+
+    .mode-btn:active:not(:disabled) {
+      background-color: #E8F2EA;
+      border-color: #3E6B48;
+    }
+
+    .mode-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .mode-btn-icon {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 14px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
     }
 
     /* ── Produce picker box ── */
@@ -158,7 +215,7 @@ class GardenTracker extends LitElement {
       color: #A3B5A8;
     }
 
-    /* ── Weight input ── */
+    /* ── Weight input (single) ── */
     .weight-input-wrap {
       flex: 1;
       display: flex;
@@ -193,6 +250,35 @@ class GardenTracker extends LitElement {
     .weight-input:disabled {
       background: #F5F7F3;
       color: #8A9E8F;
+    }
+
+    /* ── Lbs / oz split row ── */
+    .weight-inputs-row {
+      flex: 1;
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .weight-unit-group {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .weight-unit-group .weight-input {
+      flex: 1;
+      width: auto;
+    }
+
+    .weight-unit-label {
+      font-size: 18px;
+      font-weight: 500;
+      color: #6B8070;
+      flex-shrink: 0;
     }
 
     /* ── Log button ── */
@@ -362,13 +448,17 @@ class GardenTracker extends LitElement {
     }
   `;
 
+  static _MODES = ['lbs', 'lbs_oz', 'count'];
+
   constructor() {
     super();
     this._produce = [];
     this._loading = true;
     this._selected = null;
     this._pickerOpen = false;
+    this._measureMode = 'lbs';
     this._weight = '';
+    this._weightOz = '';
     this._submitState = 'idle';
 
     firebase.database().ref('produce_reference').once('value').then(snap => {
@@ -378,6 +468,26 @@ class GardenTracker extends LitElement {
         .sort((a, b) => a.name.localeCompare(b.name));
       this._loading = false;
     });
+  }
+
+  get _hasValue() {
+    if (this._measureMode === 'lbs_oz') return !!(this._weight || this._weightOz);
+    return !!this._weight;
+  }
+
+  get _fieldLabel() {
+    return { lbs: 'Weight (lbs)', lbs_oz: 'Weight (lbs / oz)', count: 'Count' }[this._measureMode];
+  }
+
+  get _modeBtnLabel() {
+    return { lbs: 'lbs', lbs_oz: 'lbs / oz', count: 'count' }[this._measureMode];
+  }
+
+  _cycleMode() {
+    const modes = GardenTracker._MODES;
+    this._measureMode = modes[(modes.indexOf(this._measureMode) + 1) % modes.length];
+    this._weight = '';
+    this._weightOz = '';
   }
 
   _pickProduce(item) {
@@ -391,11 +501,13 @@ class GardenTracker extends LitElement {
   _reset() {
     this._selected = null;
     this._weight = '';
+    this._weightOz = '';
     this._submitState = 'idle';
+    // _measureMode intentionally preserved between harvests
   }
 
   async _submit() {
-    if (!this._selected || !this._weight || this._submitState !== 'idle') return;
+    if (!this._selected || !this._hasValue || this._submitState !== 'idle') return;
 
     this._submitState = 'loading';
 
@@ -403,8 +515,15 @@ class GardenTracker extends LitElement {
       const update = {
         produce_key: this._selected.key,
         date_harvested: DateTime.now().ts,
-        harvest_weight: parseFloat(this._weight),
       };
+
+      if (this._measureMode === 'lbs') {
+        update.harvest_weight = parseFloat(this._weight);
+      } else if (this._measureMode === 'lbs_oz') {
+        update.harvest_weight = (parseInt(this._weight) || 0) + (parseFloat(this._weightOz) || 0) / 16;
+      } else {
+        update.harvest_count = parseInt(this._weight);
+      }
 
       const API_KEY = '18ec2e0a89f38de836ae9e5f16371798';
       const BASE_URL = `https://api.openweathermap.org/data/2.5/weather?lat=40.241413&lon=-77.228106&units=imperial&appid=${API_KEY}`;
@@ -429,7 +548,7 @@ class GardenTracker extends LitElement {
     const isLoading = this._submitState === 'loading';
     const isSuccess = this._submitState === 'success';
     const isBusy = isLoading || isSuccess;
-    const canSubmit = this._selected && this._weight && !isBusy;
+    const canSubmit = this._selected && this._hasValue && !isBusy;
 
     return html`
       <div class="header">
@@ -460,21 +579,63 @@ class GardenTracker extends LitElement {
               </div>
 
               <div class="weight-section">
-                <div class="field-label">Weight (lbs)</div>
-                <div class="weight-input-wrap">
-                  <input
-                    class="weight-input"
-                    type="number"
-                    inputmode="decimal"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    .value="${this._weight}"
-                    ?disabled="${isBusy}"
-                    @input="${(e) => this._weight = e.target.value}"
-                    @keydown="${(e) => e.key === 'Enter' && this._submit()}"
-                  >
+                <div class="field-label-row">
+                  <div class="field-label">${this._fieldLabel}</div>
+                  <button class="mode-btn" ?disabled="${isBusy}" @click="${this._cycleMode}">
+                    <span class="mode-btn-icon">sync</span>
+                    ${this._modeBtnLabel}
+                  </button>
                 </div>
+
+                ${this._measureMode === 'lbs_oz' ? html`
+                  <div class="weight-inputs-row">
+                    <div class="weight-unit-group">
+                      <input
+                        class="weight-input"
+                        type="number"
+                        inputmode="numeric"
+                        min="0"
+                        step="1"
+                        placeholder="0"
+                        .value="${this._weight}"
+                        ?disabled="${isBusy}"
+                        @input="${(e) => this._weight = e.target.value}"
+                        @keydown="${(e) => e.key === 'Enter' && this._submit()}"
+                      >
+                      <span class="weight-unit-label">lbs</span>
+                    </div>
+                    <div class="weight-unit-group">
+                      <input
+                        class="weight-input"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.1"
+                        placeholder="0"
+                        .value="${this._weightOz}"
+                        ?disabled="${isBusy}"
+                        @input="${(e) => this._weightOz = e.target.value}"
+                        @keydown="${(e) => e.key === 'Enter' && this._submit()}"
+                      >
+                      <span class="weight-unit-label">oz</span>
+                    </div>
+                  </div>
+                ` : html`
+                  <div class="weight-input-wrap">
+                    <input
+                      class="weight-input"
+                      type="number"
+                      inputmode="${this._measureMode === 'count' ? 'numeric' : 'decimal'}"
+                      min="0"
+                      step="${this._measureMode === 'count' ? '1' : '0.01'}"
+                      placeholder="${this._measureMode === 'count' ? '0' : '0.00'}"
+                      .value="${this._weight}"
+                      ?disabled="${isBusy}"
+                      @input="${(e) => this._weight = e.target.value}"
+                      @keydown="${(e) => e.key === 'Enter' && this._submit()}"
+                    >
+                  </div>
+                `}
               </div>
 
             </div>
