@@ -51,21 +51,36 @@ class GardenTracker extends LitElement {
       flex: 1;
       display: flex;
       flex-direction: column;
-      padding: 28px 20px;
-      padding-bottom: max(28px, env(safe-area-inset-bottom));
-      gap: 20px;
+      padding: 20px 20px;
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      gap: 12px;
       overflow: hidden;
+      min-height: 0;
     }
 
     .inputs {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 12px;
+      min-height: 0;
     }
 
-    .spacer { flex: 1; }
+    /* ── Field sections ── */
+    .produce-section {
+      flex: 3;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
 
-    /* ── Field labels ── */
+    .weight-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
     .field-label {
       font-size: 13px;
       font-weight: 600;
@@ -73,24 +88,29 @@ class GardenTracker extends LitElement {
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 8px;
+      flex-shrink: 0;
     }
 
     /* ── Produce picker box ── */
     .produce-box {
+      flex: 1;
+      position: relative;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 14px;
+      justify-content: center;
+      gap: 12px;
       width: 100%;
       box-sizing: border-box;
-      padding: 16px 18px;
+      padding: 20px;
       background: #FFFFFF;
       border: 1.5px solid #C8D5CB;
       border-radius: 12px;
       cursor: pointer;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.2s;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
-      min-height: 72px;
+      min-height: 0;
     }
 
     .produce-box:active {
@@ -102,26 +122,28 @@ class GardenTracker extends LitElement {
     }
 
     .produce-box img {
-      width: 44px;
-      height: 44px;
+      width: 80px;
+      height: 80px;
       object-fit: contain;
-      flex-shrink: 0;
     }
 
     .produce-box-placeholder {
-      font-size: 16px;
+      font-size: 17px;
       color: #A3B5A8;
-      flex: 1;
+      text-align: center;
     }
 
     .produce-box-name {
-      font-size: 17px;
+      font-size: 20px;
       font-weight: 500;
       color: #2C3E2F;
-      flex: 1;
+      text-align: center;
     }
 
     .produce-box-chevron {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
       font-family: 'Material Symbols Outlined';
       font-weight: normal;
       font-style: normal;
@@ -134,17 +156,23 @@ class GardenTracker extends LitElement {
       direction: ltr;
       -webkit-font-smoothing: antialiased;
       color: #A3B5A8;
-      flex-shrink: 0;
     }
 
     /* ── Weight input ── */
+    .weight-input-wrap {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
     .weight-input {
+      flex: 1;
       width: 100%;
       box-sizing: border-box;
-      padding: 18px 18px;
+      padding: 18px;
       border: 1.5px solid #C8D5CB;
       border-radius: 12px;
-      font-size: 24px;
+      font-size: 28px;
       font-family: 'Roboto', sans-serif;
       color: #2C3E2F;
       outline: none;
@@ -415,7 +443,7 @@ class GardenTracker extends LitElement {
           <div class="body">
             <div class="inputs">
 
-              <div>
+              <div class="produce-section">
                 <div class="field-label">Produce</div>
                 <div
                   class="produce-box ${this._selected ? 'has-value' : ''}"
@@ -431,25 +459,25 @@ class GardenTracker extends LitElement {
                 </div>
               </div>
 
-              <div>
+              <div class="weight-section">
                 <div class="field-label">Weight (lbs)</div>
-                <input
-                  class="weight-input"
-                  type="number"
-                  inputmode="decimal"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  .value="${this._weight}"
-                  ?disabled="${isBusy}"
-                  @input="${(e) => this._weight = e.target.value}"
-                  @keydown="${(e) => e.key === 'Enter' && this._submit()}"
-                >
+                <div class="weight-input-wrap">
+                  <input
+                    class="weight-input"
+                    type="number"
+                    inputmode="decimal"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    .value="${this._weight}"
+                    ?disabled="${isBusy}"
+                    @input="${(e) => this._weight = e.target.value}"
+                    @keydown="${(e) => e.key === 'Enter' && this._submit()}"
+                  >
+                </div>
               </div>
 
             </div>
-
-            <div class="spacer"></div>
 
             <button
               class="btn-log ${this._submitState}"
