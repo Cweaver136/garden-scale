@@ -3,7 +3,7 @@ import nodeResolve from '@rollup/plugin-node-resolve';
 
 const CONFIG = {
   // our input files, relative reference from rootDir specified below
-  input: ['index.html'],
+  input: ['index.html', 'garden-tracker.html'],
   // plugins to make the thing go zoom zoom
   plugins: [
     // plugin for generating HTML files from rollup
