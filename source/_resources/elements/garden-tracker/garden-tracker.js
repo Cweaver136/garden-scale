@@ -1,6 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { map } from 'lit/directives/map.js';
-import { firebase } from '../../../firebaseConfig.js';
+import { firebase } from '../../../../firebaseConfig.js';
 import { DateTime } from 'luxon';
 
 class GardenTracker extends LitElement {
