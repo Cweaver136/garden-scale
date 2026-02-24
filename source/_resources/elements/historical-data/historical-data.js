@@ -445,10 +445,10 @@ class HistoricalData extends LitElement {
 
         <div class="filter-group">
           <label>Year</label>
-          <select .value="${this._filterYear}" @change="${(e) => this._filterYear = e.target.value}">
-            <option value="">All Years</option>
+          <select @change="${(e) => this._filterYear = e.target.value}">
+            <option value="" ?selected="${this._filterYear === ''}">All Years</option>
             ${map(this._yearOptions, (year) => html`
-              <option value="${year}">${year}</option>
+              <option value="${year}" ?selected="${year === this._filterYear}">${year}</option>
             `)}
           </select>
         </div>
