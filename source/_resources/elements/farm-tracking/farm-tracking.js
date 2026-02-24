@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import '../historical-data/historical-data.js';
 import '../poultry-tracking/poultry-tracking.js';
+import '../farm-overview/farm-overview.js';
 
 class FarmTracking extends LitElement {
 
@@ -224,7 +225,7 @@ class FarmTracking extends LitElement {
 
   _getViewFromHash() {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['historical-data', 'poultry', 'farm-financials'];
+    const validViews = ['historical-data', 'poultry', 'farm-financials', 'farm-overview'];
     return validViews.includes(hash) ? hash : 'historical-data';
   }
 
@@ -284,6 +285,14 @@ class FarmTracking extends LitElement {
               </div>
             </div>
 
+            <!-- Farm Overview (direct link, no dropdown) -->
+            <div
+              class="nav-btn ${this.currentView === 'farm-overview' ? 'active' : ''}"
+              @click="${() => this._navigate('farm-overview')}">
+              <span class="material-symbols-outlined">analytics</span>
+              Farm Overview
+            </div>
+
             <!-- financials (direct link, no dropdown) -->
             <div
               class="nav-btn ${this.currentView === 'farm-financials' ? 'active' : ''}"
@@ -308,6 +317,8 @@ class FarmTracking extends LitElement {
     switch (this.currentView) {
       case 'historical-data':
         return html`<historical-data></historical-data>`;
+      case 'farm-overview':
+        return html`<farm-overview></farm-overview>`;
       case 'farm-financials':
         return html`
           <div class="placeholder-page">
