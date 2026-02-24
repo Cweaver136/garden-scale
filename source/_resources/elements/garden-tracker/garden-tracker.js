@@ -111,11 +111,11 @@ class GardenTracker extends LitElement {
       display: flex;
       align-items: center;
       gap: 5px;
-      padding: 4px 12px;
+      padding: 8px 18px;
       border: 1px solid #C8D5CB;
       border-radius: 20px;
       background: #FFFFFF;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 500;
       font-family: 'Roboto', sans-serif;
       color: #4A6350;
@@ -262,7 +262,8 @@ class GardenTracker extends LitElement {
     }
 
     .weight-unit-group {
-      flex: 1;
+      flex: 1 1 0;
+      min-width: 0;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -270,8 +271,9 @@ class GardenTracker extends LitElement {
     }
 
     .weight-unit-group .weight-input {
-      flex: 1;
-      width: auto;
+      flex: 1 1 0;
+      min-width: 0;
+      width: 0;
     }
 
     .weight-unit-label {
