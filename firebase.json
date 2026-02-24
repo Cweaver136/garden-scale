@@ -9,6 +9,9 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      { "source": "/garden-tracker", "destination": "/garden-tracker.html" }
     ]
   },
   "database": {

@@ -1,5 +1,4 @@
 import { LitElement, html, css } from 'lit';
-import '../record-harvest/record-harvest.js';
 import '../historical-data/historical-data.js';
 import '../poultry-tracking/poultry-tracking.js';
 
@@ -225,8 +224,8 @@ class FarmTracking extends LitElement {
 
   _getViewFromHash() {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['record-harvest', 'historical-data', 'poultry', 'farm-financials'];
-    return validViews.includes(hash) ? hash : 'record-harvest';
+    const validViews = ['historical-data', 'poultry', 'farm-financials'];
+    return validViews.includes(hash) ? hash : 'historical-data';
   }
 
   _navigate(view) {
@@ -236,7 +235,7 @@ class FarmTracking extends LitElement {
   }
 
   render() {
-    const gardenViews = ['record-harvest', 'historical-data'];
+    const gardenViews = ['historical-data'];
     const livestockViews = ['poultry'];
 
     return html`
@@ -257,12 +256,6 @@ class FarmTracking extends LitElement {
                 <span class="material-symbols-outlined nav-chevron ${this._gardenOpen ? 'rotated' : ''}">expand_more</span>
               </div>
               <div class="dropdown-panel ${this._gardenOpen ? 'open' : ''}">
-                <div
-                  class="dropdown-item ${this.currentView === 'record-harvest' ? 'active' : ''}"
-                  @click="${() => this._navigate('record-harvest')}">
-                  <span class="material-symbols-outlined">add_circle</span>
-                  Record Harvest
-                </div>
                 <div
                   class="dropdown-item ${this.currentView === 'historical-data' ? 'active' : ''}"
                   @click="${() => this._navigate('historical-data')}">
@@ -313,8 +306,6 @@ class FarmTracking extends LitElement {
 
   _renderCurrentView() {
     switch (this.currentView) {
-      case 'record-harvest':
-        return html`<record-harvest></record-harvest>`;
       case 'historical-data':
         return html`<historical-data></historical-data>`;
       case 'farm-financials':
@@ -328,7 +319,7 @@ class FarmTracking extends LitElement {
       case 'poultry':
         return html`<poultry-tracking></poultry-tracking>`;
       default:
-        return html`<record-harvest></record-harvest>`;
+        return html`<historical-data></historical-data>`;
     }
   }
 }
