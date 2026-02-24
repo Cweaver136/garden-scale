@@ -18,6 +18,7 @@ class FarmOverview extends LitElement {
     _produceReference: { type: Object, state: true },
     _batches: { type: Array, state: true },
     _loading: { type: Boolean, state: true },
+    _selectedYear: { type: String, state: true },
   };
 
   static styles = css`
@@ -45,6 +46,13 @@ class FarmOverview extends LitElement {
       padding: 28px 32px 0;
     }
 
+    .header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
     .page-header h1 {
       margin: 0;
       font-size: 22px;
@@ -56,6 +64,37 @@ class FarmOverview extends LitElement {
       margin: 6px 0 0;
       font-size: 14px;
       color: #6B8070;
+    }
+
+    /* ── Year picker ── */
+    .year-picker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .year-picker label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #6B8070;
+      white-space: nowrap;
+    }
+
+    .year-picker select {
+      padding: 7px 10px;
+      border: 1px solid #C8D5CB;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: 'Roboto', sans-serif;
+      color: #2C3E2F;
+      background: #FAFBFA;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .year-picker select:focus {
+      border-color: #3E6B48;
     }
 
     /* ── Loading / empty ── */
@@ -98,36 +137,61 @@ class FarmOverview extends LitElement {
 
     /* ── Overview content ── */
     .overview-content {
-      padding: 20px 32px 40px;
+      padding: 24px 32px 40px;
       display: flex;
       flex-direction: column;
       gap: 28px;
     }
 
-    /* ── Year section ── */
-    .year-section {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+    /* ── Section card ── */
+    .section-card {
+      background: #FFFFFF;
+      border: 1px solid #E0E5E1;
+      border-radius: 12px;
+      overflow: hidden;
     }
 
-    .year-header {
+    .section-card-header {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      padding: 16px 20px;
+      border-bottom: 1px solid #E0E5E1;
+      background: #F8FAF8;
     }
 
-    .year-label {
-      font-size: 19px;
-      font-weight: 700;
+    .section-card-header .section-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .section-card-header .section-icon.green {
+      background: #DCF0DF;
+      color: #3E6B48;
+    }
+
+    .section-card-header .section-icon.amber {
+      background: #FFF3D6;
+      color: #9A6E00;
+    }
+
+    .section-card-header .section-icon .material-symbols-outlined {
+      font-size: 18px;
+    }
+
+    .section-card-header h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
       color: #2C3E2F;
-      letter-spacing: -0.3px;
     }
 
-    .year-divider {
-      flex: 1;
-      height: 1px;
-      background: #E0E5E1;
+    .section-card-body {
+      padding: 16px 20px;
     }
 
     /* ── Stat cards row ── */
@@ -141,21 +205,21 @@ class FarmOverview extends LitElement {
       display: flex;
       align-items: center;
       gap: 14px;
-      background: #FFFFFF;
+      background: #F5F7F3;
       border: 1px solid #E0E5E1;
-      border-radius: 12px;
-      padding: 16px 20px;
+      border-radius: 10px;
+      padding: 14px 18px;
       flex: 1;
-      min-width: 160px;
+      min-width: 150px;
     }
 
     .stat-icon-wrap {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
+      width: 38px;
+      height: 38px;
+      border-radius: 9px;
       flex-shrink: 0;
     }
 
@@ -167,12 +231,8 @@ class FarmOverview extends LitElement {
       background: #FFF3D6;
     }
 
-    .stat-icon-wrap.blue {
-      background: #E3EDFF;
-    }
-
     .stat-icon-wrap .material-symbols-outlined {
-      font-size: 22px;
+      font-size: 20px;
     }
 
     .stat-icon-wrap.green .material-symbols-outlined {
@@ -183,10 +243,6 @@ class FarmOverview extends LitElement {
       color: #9A6E00;
     }
 
-    .stat-icon-wrap.blue .material-symbols-outlined {
-      color: #3B5FBF;
-    }
-
     .stat-body {
       display: flex;
       flex-direction: column;
@@ -194,7 +250,7 @@ class FarmOverview extends LitElement {
     }
 
     .stat-value {
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 700;
       color: #2C3E2F;
       line-height: 1;
@@ -208,23 +264,7 @@ class FarmOverview extends LitElement {
       white-space: nowrap;
     }
 
-    /* ── Section label ── */
-    .section-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #4A6350;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
     /* ── Produce table ── */
-    .table-wrap {
-      background: #FFFFFF;
-      border: 1px solid #E0E5E1;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -235,7 +275,7 @@ class FarmOverview extends LitElement {
     }
 
     th {
-      padding: 11px 16px;
+      padding: 10px 16px;
       text-align: left;
       font-size: 12px;
       font-weight: 600;
@@ -251,7 +291,7 @@ class FarmOverview extends LitElement {
     }
 
     td {
-      padding: 11px 16px;
+      padding: 10px 16px;
       font-size: 14px;
       color: #2C3E2F;
       border-bottom: 1px solid #F0F3F0;
@@ -286,8 +326,8 @@ class FarmOverview extends LitElement {
 
     .produce-dot {
       display: inline-block;
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: #90C795;
       margin-right: 8px;
@@ -295,11 +335,19 @@ class FarmOverview extends LitElement {
       flex-shrink: 0;
     }
 
-    .no-produce {
-      padding: 24px 16px;
-      text-align: center;
+    /* ── Section-level empty states ── */
+    .section-empty {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
       font-size: 13px;
       color: #8A9E8F;
+    }
+
+    .section-empty .material-symbols-outlined {
+      font-size: 16px;
+      color: #B0C0B4;
     }
   `;
 
@@ -309,6 +357,7 @@ class FarmOverview extends LitElement {
     this._produceReference = {};
     this._batches = [];
     this._loading = true;
+    this._selectedYear = String(new Date().getFullYear());
 
     this._loadData();
   }
@@ -354,7 +403,6 @@ class FarmOverview extends LitElement {
             if (record.processing_date) {
               processedYear = String(DateTime.fromMillis(record.processing_date).year);
             } else if (record.hatch_date) {
-              // Archived but no processing_date — use hatch year as fallback
               processedYear = String(DateTime.fromMillis(record.hatch_date).year);
             }
           }
@@ -377,15 +425,16 @@ class FarmOverview extends LitElement {
     this._loading = false;
   }
 
-  get _years() {
+  // All years that have any data, newest first
+  get _availableYears() {
     const years = new Set();
     this._harvests.forEach(h => { if (h._year) years.add(h._year); });
     this._batches.forEach(b => { if (b._processedYear) years.add(b._processedYear); });
-    return [...years].sort((a, b) => b.localeCompare(a)); // newest first
+    return [...years].sort((a, b) => b.localeCompare(a));
   }
 
   _getYearData(year) {
-    // ── Produce totals ──
+    // ── Garden: produce totals ──
     const yearHarvests = this._harvests.filter(h => h._year === year);
     const produceMap = new Map();
     for (const h of yearHarvests) {
@@ -414,24 +463,28 @@ class FarmOverview extends LitElement {
       return b.totalCount - a.totalCount;
     });
 
-    // ── Poultry stats ──
+    // ── Livestock: poultry stats ──
     const processedBatches = this._batches.filter(b => b._isProcessed && b._processedYear === year);
     const totalBirdsProcessed = processedBatches.reduce((sum, b) => sum + (b.number_of_birds || 0), 0);
 
-    // Average cost per bird across all processed batches that have cost data
     const batchesWithCost = processedBatches.filter(b => b._costPerBird != null);
     const avgCostPerBird = batchesWithCost.length > 0
       ? batchesWithCost.reduce((sum, b) => sum + b._costPerBird, 0) / batchesWithCost.length
       : null;
 
-    return { produce, totalBirdsProcessed, avgCostPerBird, processedBatches };
+    return { produce, totalBirdsProcessed, avgCostPerBird };
   }
 
   render() {
     return html`
       <div class="page-header">
-        <h1>Farm Overview</h1>
-        <p>Year-by-year summary of produce harvests and poultry batches</p>
+        <div class="header-row">
+          <div>
+            <h1>Farm Overview</h1>
+            <p>Summary of produce harvests and poultry batches</p>
+          </div>
+          ${!this._loading ? this._renderYearPicker() : ''}
+        </div>
       </div>
 
       ${this._loading
@@ -441,9 +494,27 @@ class FarmOverview extends LitElement {
     `;
   }
 
-  _renderContent() {
-    const years = this._years;
+  _renderYearPicker() {
+    const years = this._availableYears;
 
+    // Always include the current year as a selectable option
+    const currentYear = String(new Date().getFullYear());
+    const allYears = years.includes(currentYear) ? years : [currentYear, ...years];
+
+    return html`
+      <div class="year-picker">
+        <label>Year</label>
+        <select @change="${e => this._selectedYear = e.target.value}">
+          ${map(allYears, year => html`
+            <option value="${year}" ?selected="${year === this._selectedYear}">${year}</option>
+          `)}
+        </select>
+      </div>
+    `;
+  }
+
+  _renderContent() {
+    const years = this._availableYears;
     if (years.length === 0) {
       return html`
         <div class="empty-state">
@@ -454,109 +525,115 @@ class FarmOverview extends LitElement {
       `;
     }
 
+    const { produce, totalBirdsProcessed, avgCostPerBird } = this._getYearData(this._selectedYear);
+
     return html`
       <div class="overview-content">
-        ${map(years, year => this._renderYear(year))}
-      </div>
-    `;
-  }
 
-  _renderYear(year) {
-    const { produce, totalBirdsProcessed, avgCostPerBird } = this._getYearData(year);
-
-    return html`
-      <div class="year-section">
-
-        <div class="year-header">
-          <span class="year-label">${year}</span>
-          <div class="year-divider"></div>
-        </div>
-
-        <div class="stats-row">
-          <div class="stat-card">
-            <div class="stat-icon-wrap green">
-              <span class="material-symbols-outlined">egg</span>
-            </div>
-            <div class="stat-body">
-              <div class="stat-value">${totalBirdsProcessed}</div>
-              <div class="stat-label">Birds Processed</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon-wrap amber">
-              <span class="material-symbols-outlined">payments</span>
-            </div>
-            <div class="stat-body">
-              <div class="stat-value">${avgCostPerBird != null ? `$${avgCostPerBird.toFixed(2)}` : '—'}</div>
-              <div class="stat-label">Avg Cost / Bird</div>
-            </div>
-          </div>
-
-          <div class="stat-card">
-            <div class="stat-icon-wrap blue">
+        <!-- Garden section -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-icon green">
               <span class="material-symbols-outlined">yard</span>
             </div>
-            <div class="stat-body">
-              <div class="stat-value">${produce.length}</div>
-              <div class="stat-label">Produce Types</div>
-            </div>
+            <h2>Garden</h2>
+          </div>
+          <div class="section-card-body">
+            ${produce.length === 0
+              ? html`
+                <div class="section-empty">
+                  <span class="material-symbols-outlined">info</span>
+                  No harvests recorded for ${this._selectedYear}
+                </div>
+              `
+              : this._renderProduceTable(produce)
+            }
           </div>
         </div>
 
-        ${produce.length > 0 ? this._renderProduceTable(produce) : ''}
+        <!-- Livestock section -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <div class="section-icon amber">
+              <span class="material-symbols-outlined">pets</span>
+            </div>
+            <h2>Livestock</h2>
+          </div>
+          <div class="section-card-body">
+            ${totalBirdsProcessed === 0 && avgCostPerBird == null
+              ? html`
+                <div class="section-empty">
+                  <span class="material-symbols-outlined">info</span>
+                  No processed batches recorded for ${this._selectedYear}
+                </div>
+              `
+              : html`
+                <div class="stats-row">
+                  <div class="stat-card">
+                    <div class="stat-icon-wrap green">
+                      <span class="material-symbols-outlined">egg</span>
+                    </div>
+                    <div class="stat-body">
+                      <div class="stat-value">${totalBirdsProcessed}</div>
+                      <div class="stat-label">Birds Processed</div>
+                    </div>
+                  </div>
+
+                  <div class="stat-card">
+                    <div class="stat-icon-wrap amber">
+                      <span class="material-symbols-outlined">payments</span>
+                    </div>
+                    <div class="stat-body">
+                      <div class="stat-value">${avgCostPerBird != null ? `$${avgCostPerBird.toFixed(2)}` : '—'}</div>
+                      <div class="stat-label">Avg Cost / Bird</div>
+                    </div>
+                  </div>
+                </div>
+              `
+            }
+          </div>
+        </div>
 
       </div>
     `;
   }
 
   _renderProduceTable(produce) {
-    // Check if any produce item has a price_per_unit configured
-    const hasPricing = produce.some(p => {
-      const ref = this._produceReference[p.produce_key];
-      return ref?.price_per_unit != null;
-    });
-
     return html`
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Produce</th>
-              <th class="right">Total Harvested</th>
-              <th class="right">Est. Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${produce.length === 0
-              ? html`<tr><td colspan="3" class="no-produce">No harvests recorded for this year</td></tr>`
-              : map(produce, (row) => {
-                  const ref = this._produceReference[row.produce_key];
-                  const pricePerUnit = ref?.price_per_unit ?? null;
-                  let estimatedValue = null;
-                  if (pricePerUnit != null) {
-                    if (row.hasWeight) estimatedValue = row.totalWeight * pricePerUnit;
-                    else if (row.hasCount) estimatedValue = row.totalCount * pricePerUnit;
-                  }
-
-                  return html`
-                    <tr>
-                      <td class="produce-name">
-                        <span class="produce-dot"></span>${row.name}
-                      </td>
-                      <td class="right">
-                        ${row.hasWeight ? formatWeight(row.totalWeight) : row.hasCount ? `${row.totalCount} ct` : '—'}
-                      </td>
-                      <td class="right ${estimatedValue != null ? 'value-cell' : 'dim'}">
-                        ${estimatedValue != null ? `$${estimatedValue.toFixed(2)}` : '—'}
-                      </td>
-                    </tr>
-                  `;
-                })
+      <table>
+        <thead>
+          <tr>
+            <th>Produce</th>
+            <th class="right">Total Harvested</th>
+            <th class="right">Est. Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${map(produce, (row) => {
+            const ref = this._produceReference[row.produce_key];
+            const pricePerUnit = ref?.price_per_unit ?? null;
+            let estimatedValue = null;
+            if (pricePerUnit != null) {
+              if (row.hasWeight) estimatedValue = row.totalWeight * pricePerUnit;
+              else if (row.hasCount) estimatedValue = row.totalCount * pricePerUnit;
             }
-          </tbody>
-        </table>
-      </div>
+
+            return html`
+              <tr>
+                <td class="produce-name">
+                  <span class="produce-dot"></span>${row.name}
+                </td>
+                <td class="right">
+                  ${row.hasWeight ? formatWeight(row.totalWeight) : row.hasCount ? `${row.totalCount} ct` : '—'}
+                </td>
+                <td class="right ${estimatedValue != null ? 'value-cell' : 'dim'}">
+                  ${estimatedValue != null ? `$${estimatedValue.toFixed(2)}` : '—'}
+                </td>
+              </tr>
+            `;
+          })}
+        </tbody>
+      </table>
     `;
   }
 }
