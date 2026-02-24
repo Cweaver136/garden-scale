@@ -43,14 +43,7 @@ class FarmOverview extends LitElement {
 
     /* ── Page header ── */
     .page-header {
-      padding: 28px 32px 0;
-    }
-
-    .header-row {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
+      padding: 28px 32px 12px;
     }
 
     .page-header h1 {
@@ -66,22 +59,32 @@ class FarmOverview extends LitElement {
       color: #6B8070;
     }
 
-    /* ── Year picker ── */
-    .year-picker {
+    /* ── Year filter bar ── */
+    .filters {
       display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 16px 32px;
+      background: #FFFFFF;
+      margin: 0 32px;
+      border-radius: 10px;
+      border: 1px solid #E0E5E1;
+      align-items: flex-end;
     }
 
-    .year-picker label {
-      font-size: 13px;
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .filter-group label {
+      font-size: 12px;
       font-weight: 500;
       color: #6B8070;
-      white-space: nowrap;
     }
 
-    .year-picker select {
+    .filter-group select {
       padding: 7px 10px;
       border: 1px solid #C8D5CB;
       border-radius: 6px;
@@ -91,9 +94,10 @@ class FarmOverview extends LitElement {
       background: #FAFBFA;
       outline: none;
       cursor: pointer;
+      min-width: 100px;
     }
 
-    .year-picker select:focus {
+    .filter-group select:focus {
       border-color: #3E6B48;
     }
 
@@ -137,7 +141,7 @@ class FarmOverview extends LitElement {
 
     /* ── Overview content ── */
     .overview-content {
-      padding: 24px 32px 40px;
+      padding: 16px 32px 40px;
       display: flex;
       flex-direction: column;
       gap: 28px;
@@ -478,14 +482,11 @@ class FarmOverview extends LitElement {
   render() {
     return html`
       <div class="page-header">
-        <div class="header-row">
-          <div>
-            <h1>Farm Overview</h1>
-            <p>Summary of produce harvests and poultry batches</p>
-          </div>
-          ${!this._loading ? this._renderYearPicker() : ''}
-        </div>
+        <h1>Farm Overview</h1>
+        <p>Summary of produce harvests and poultry batches</p>
       </div>
+
+      ${!this._loading ? this._renderFilters() : ''}
 
       ${this._loading
         ? html`<div class="loading">Loading overview data…</div>`
@@ -494,21 +495,22 @@ class FarmOverview extends LitElement {
     `;
   }
 
-  _renderYearPicker() {
-    const years = this._availableYears;
-
-    // Always include the current year as a selectable option
+  _renderFilters() {
     const currentYear = String(new Date().getFullYear());
-    const allYears = years.includes(currentYear) ? years : [currentYear, ...years];
+    const allYears = this._availableYears.includes(currentYear)
+      ? this._availableYears
+      : [currentYear, ...this._availableYears];
 
     return html`
-      <div class="year-picker">
-        <label>Year</label>
-        <select @change="${e => this._selectedYear = e.target.value}">
-          ${map(allYears, year => html`
-            <option value="${year}" ?selected="${year === this._selectedYear}">${year}</option>
-          `)}
-        </select>
+      <div class="filters">
+        <div class="filter-group">
+          <label>Year</label>
+          <select @change="${e => this._selectedYear = e.target.value}">
+            ${map(allYears, year => html`
+              <option value="${year}" ?selected="${year === this._selectedYear}">${year}</option>
+            `)}
+          </select>
+        </div>
       </div>
     `;
   }
