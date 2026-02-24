@@ -10,7 +10,7 @@ class GardenTracker extends LitElement {
     _loading: { type: Boolean, state: true },
     _selected: { type: Object, state: true },    // { key, name, image } | null
     _pickerOpen: { type: Boolean, state: true },
-    _measureMode: { type: String, state: true }, // 'lbs' | 'lbs_oz' | 'count'
+    _measureMode: { type: String, state: true }, // 'lbs_oz' | 'count'
     _weight: { type: String, state: true },
     _weightOz: { type: String, state: true },
     _submitState: { type: String, state: true },  // 'idle' | 'loading' | 'success'
@@ -450,7 +450,7 @@ class GardenTracker extends LitElement {
     }
   `;
 
-  static _MODES = ['lbs', 'lbs_oz', 'count'];
+  static _MODES = ['lbs_oz', 'count'];
 
   constructor() {
     super();
@@ -458,7 +458,7 @@ class GardenTracker extends LitElement {
     this._loading = true;
     this._selected = null;
     this._pickerOpen = false;
-    this._measureMode = 'lbs';
+    this._measureMode = 'lbs_oz';
     this._weight = '';
     this._weightOz = '';
     this._submitState = 'idle';
@@ -478,11 +478,11 @@ class GardenTracker extends LitElement {
   }
 
   get _fieldLabel() {
-    return { lbs: 'Weight (lbs)', lbs_oz: 'Weight (lbs / oz)', count: 'Count' }[this._measureMode];
+    return { lbs_oz: 'Weight (lbs / oz)', count: 'Count' }[this._measureMode];
   }
 
   get _modeBtnLabel() {
-    return { lbs: 'lbs', lbs_oz: 'lbs / oz', count: 'count' }[this._measureMode];
+    return { lbs_oz: 'lbs / oz', count: 'count' }[this._measureMode];
   }
 
   _cycleMode() {
@@ -519,9 +519,7 @@ class GardenTracker extends LitElement {
         date_harvested: DateTime.now().ts,
       };
 
-      if (this._measureMode === 'lbs') {
-        update.harvest_weight = parseFloat(this._weight);
-      } else if (this._measureMode === 'lbs_oz') {
+      if (this._measureMode === 'lbs_oz') {
         update.harvest_weight = (parseInt(this._weight) || 0) + (parseFloat(this._weightOz) || 0) / 16;
       } else {
         update.harvest_count = parseInt(this._weight);
