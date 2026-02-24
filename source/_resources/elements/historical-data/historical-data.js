@@ -4,6 +4,14 @@ import { firebase } from '../../../../firebaseConfig.js';
 import { DateTime } from 'luxon';
 import './harvest-edit-dialog.js';
 
+function formatWeight(lbs) {
+  const wholeLbs = Math.floor(lbs);
+  const oz = Math.round((lbs - wholeLbs) * 16);
+  if (wholeLbs === 0) return `${oz} oz`;
+  if (oz === 0) return `${wholeLbs} lbs`;
+  return `${wholeLbs} lbs ${oz} oz`;
+}
+
 class HistoricalData extends LitElement {
 
   static properties = {
@@ -356,15 +364,24 @@ class HistoricalData extends LitElement {
   get _totalsPerProduce() {
     const map = new Map();
     for (const h of this._filteredHarvests) {
-      const entry = map.get(h.produce_key) ?? { name: h._produceName, count: 0, totalWeight: 0, hasWeight: false };
+      const entry = map.get(h.produce_key) ?? { name: h._produceName, count: 0, totalWeight: 0, hasWeight: false, totalCount: 0, hasCount: false };
       entry.count += 1;
       if (h.harvest_weight != null) {
         entry.totalWeight += h.harvest_weight;
         entry.hasWeight = true;
       }
+      if (h.harvest_count != null) {
+        entry.totalCount += h.harvest_count;
+        entry.hasCount = true;
+      }
       map.set(h.produce_key, entry);
     }
-    return [...map.values()].sort((a, b) => b.totalWeight - a.totalWeight);
+    return [...map.values()].sort((a, b) => {
+      if (a.hasWeight && b.hasWeight) return b.totalWeight - a.totalWeight;
+      if (a.hasWeight) return -1;
+      if (b.hasWeight) return 1;
+      return b.totalCount - a.totalCount;
+    });
   }
 
   get _filteredHarvests() {
@@ -436,10 +453,10 @@ class HistoricalData extends LitElement {
 
         <div class="filter-group">
           <label>Year</label>
-          <select .value="${this._filterYear}" @change="${(e) => this._filterYear = e.target.value}">
-            <option value="">All Years</option>
+          <select @change="${(e) => this._filterYear = e.target.value}">
+            <option value="" ?selected="${this._filterYear === ''}">All Years</option>
             ${map(this._yearOptions, (year) => html`
-              <option value="${year}">${year}</option>
+              <option value="${year}" ?selected="${year === this._filterYear}">${year}</option>
             `)}
           </select>
         </div>
@@ -496,7 +513,7 @@ class HistoricalData extends LitElement {
             <tr>
               <th>Produce</th>
               <th>Harvests</th>
-              <th>Total Weight (lbs)</th>
+              <th>Total</th>
             </tr>
           </thead>
           <tbody>
@@ -506,7 +523,7 @@ class HistoricalData extends LitElement {
                 <tr>
                   <td>${row.name}</td>
                   <td class="numeric">${row.count}</td>
-                  <td class="numeric total-weight">${row.hasWeight ? row.totalWeight.toFixed(2) : 'N/A'}</td>
+                  <td class="numeric total-weight">${row.hasWeight ? formatWeight(row.totalWeight) : row.hasCount ? `${row.totalCount} ct` : 'N/A'}</td>
                 </tr>
               `)
             }
@@ -539,7 +556,7 @@ class HistoricalData extends LitElement {
                 <tr>
                   <td>${harvest._produceName}</td>
                   <td>${harvest._dateFormatted}</td>
-                  <td>${harvest.harvest_weight != null ? `${harvest.harvest_weight} lbs` : harvest.harvest_count != null ? `${harvest.harvest_count} ct` : 'N/A'}</td>
+                  <td>${harvest.harvest_weight != null ? formatWeight(harvest.harvest_weight) : harvest.harvest_count != null ? `${harvest.harvest_count} ct` : 'N/A'}</td>
                   <td>
                     <div class="actions-cell">
                       <button class="action-btn edit" title="Edit harvest" @click="${() => this._openEdit(harvest)}">

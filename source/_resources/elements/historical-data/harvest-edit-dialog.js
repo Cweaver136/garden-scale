@@ -9,7 +9,10 @@ class HarvestEditDialog extends LitElement {
     harvest: { type: Object },            // existing harvest record
     produceReference: { type: Object },   // { key: { name, image } }
     _produceKey: { type: String, state: true },
+    _measureMode: { type: String, state: true },    // 'weight' | 'count'
     _weight: { type: String, state: true },
+    _weightOz: { type: String, state: true },
+    _count: { type: String, state: true },
     _dateHarvested: { type: String, state: true },  // datetime-local format
     _temperature: { type: String, state: true },
     _submitState: { type: String, state: true },    // 'idle' | 'loading' | 'success'
@@ -238,6 +241,29 @@ class HarvestEditDialog extends LitElement {
       font-size: 15px;
       line-height: 1;
     }
+
+    .weight-inputs-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .weight-unit-group {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .weight-unit-group input {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .weight-unit-label {
+      font-size: 13px;
+      color: #6B8070;
+      white-space: nowrap;
+    }
   `;
 
   constructor() {
@@ -246,7 +272,10 @@ class HarvestEditDialog extends LitElement {
     this.harvest = null;
     this.produceReference = {};
     this._produceKey = '';
+    this._measureMode = 'weight';
     this._weight = '';
+    this._weightOz = '';
+    this._count = '';
     this._dateHarvested = '';
     this._temperature = '';
     this._submitState = 'idle';
@@ -255,7 +284,23 @@ class HarvestEditDialog extends LitElement {
   willUpdate(changedProperties) {
     if (changedProperties.has('harvest') && this.harvest) {
       this._produceKey = this.harvest.produce_key || '';
-      this._weight = this.harvest.harvest_weight != null ? String(this.harvest.harvest_weight) : '';
+      if (this.harvest.harvest_count != null) {
+        this._measureMode = 'count';
+        this._count = String(this.harvest.harvest_count);
+        this._weight = '';
+      } else {
+        this._measureMode = 'weight';
+        if (this.harvest.harvest_weight != null) {
+          const wholeLbs = Math.floor(this.harvest.harvest_weight);
+          const oz = Math.round((this.harvest.harvest_weight - wholeLbs) * 16 * 10) / 10;
+          this._weight = wholeLbs > 0 ? String(wholeLbs) : '';
+          this._weightOz = oz > 0 ? String(oz) : '';
+        } else {
+          this._weight = '';
+          this._weightOz = '';
+        }
+        this._count = '';
+      }
       this._dateHarvested = this.harvest.date_harvested
         ? DateTime.fromMillis(this.harvest.date_harvested).toFormat("yyyy-MM-dd'T'HH:mm")
         : '';
@@ -321,22 +366,58 @@ class HarvestEditDialog extends LitElement {
               >
             </div>
 
-            <div class="form-group">
-              <label for="weight">
-                Weight (lbs)
-                <span class="optional-tag">(optional)</span>
-              </label>
-              <input
-                id="weight"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="Enter weight"
-                .value="${this._weight}"
-                ?disabled="${isBusy}"
-                @input="${(e) => this._weight = e.target.value}"
-              >
-            </div>
+            ${this._measureMode === 'count'
+              ? html`
+                <div class="form-group">
+                  <label for="count">Count (items)</label>
+                  <input
+                    id="count"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="Enter count"
+                    .value="${this._count}"
+                    ?disabled="${isBusy}"
+                    @input="${(e) => this._count = e.target.value}"
+                  >
+                </div>`
+              : html`
+                <div class="form-group">
+                  <label>
+                    Weight
+                    <span class="optional-tag">(optional)</span>
+                  </label>
+                  <div class="weight-inputs-row">
+                    <div class="weight-unit-group">
+                      <input
+                        id="weight"
+                        type="number"
+                        inputmode="numeric"
+                        min="0"
+                        step="1"
+                        placeholder="0"
+                        .value="${this._weight}"
+                        ?disabled="${isBusy}"
+                        @input="${(e) => this._weight = e.target.value}"
+                      >
+                      <span class="weight-unit-label">lbs</span>
+                    </div>
+                    <div class="weight-unit-group">
+                      <input
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.1"
+                        placeholder="0"
+                        .value="${this._weightOz}"
+                        ?disabled="${isBusy}"
+                        @input="${(e) => this._weightOz = e.target.value}"
+                      >
+                      <span class="weight-unit-label">oz</span>
+                    </div>
+                  </div>
+                </div>`
+            }
 
             <div class="form-group">
               <label>Temperature (&deg;F)</label>
@@ -386,8 +467,12 @@ class HarvestEditDialog extends LitElement {
       date_harvested: DateTime.fromISO(this._dateHarvested).toMillis(),
     };
 
-    if (this._weight) {
-      updated.harvest_weight = parseFloat(this._weight);
+    if (this._measureMode === 'count') {
+      if (this._count) updated.harvest_count = parseInt(this._count, 10);
+    } else {
+      if (this._weight || this._weightOz) {
+        updated.harvest_weight = (parseInt(this._weight) || 0) + (parseFloat(this._weightOz) || 0) / 16;
+      }
     }
 
     this.dispatchEvent(new CustomEvent('harvest-edit-submit', {
