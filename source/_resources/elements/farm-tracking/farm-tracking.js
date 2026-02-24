@@ -225,7 +225,7 @@ class FarmTracking extends LitElement {
 
   _getViewFromHash() {
     const hash = window.location.hash.replace('#', '');
-    const validViews = ['historical-data', 'poultry', 'farm-financials', 'farm-overview'];
+    const validViews = ['historical-data', 'poultry', 'farm-overview'];
     return validViews.includes(hash) ? hash : 'historical-data';
   }
 
@@ -293,14 +293,6 @@ class FarmTracking extends LitElement {
               Farm Overview
             </div>
 
-            <!-- financials (direct link, no dropdown) -->
-            <div
-              class="nav-btn ${this.currentView === 'farm-financials' ? 'active' : ''}"
-              @click="${() => this._navigate('farm-financials')}">
-              <span class="material-symbols-outlined">account_balance</span>
-              Farm Financials
-            </div>
-
           </nav>
         </div>
 
@@ -319,14 +311,6 @@ class FarmTracking extends LitElement {
         return html`<historical-data></historical-data>`;
       case 'farm-overview':
         return html`<farm-overview></farm-overview>`;
-      case 'farm-financials':
-        return html`
-          <div class="placeholder-page">
-            <span class="icon material-symbols-outlined">payments</span>
-            <h2>Farm Financials</h2>
-            <p>Farm revenue and expense tracking is coming soon.</p>
-          </div>
-        `;
       case 'poultry':
         return html`<poultry-tracking></poultry-tracking>`;
       default:
