@@ -356,15 +356,24 @@ class HistoricalData extends LitElement {
   get _totalsPerProduce() {
     const map = new Map();
     for (const h of this._filteredHarvests) {
-      const entry = map.get(h.produce_key) ?? { name: h._produceName, count: 0, totalWeight: 0, hasWeight: false };
+      const entry = map.get(h.produce_key) ?? { name: h._produceName, count: 0, totalWeight: 0, hasWeight: false, totalCount: 0, hasCount: false };
       entry.count += 1;
       if (h.harvest_weight != null) {
         entry.totalWeight += h.harvest_weight;
         entry.hasWeight = true;
       }
+      if (h.harvest_count != null) {
+        entry.totalCount += h.harvest_count;
+        entry.hasCount = true;
+      }
       map.set(h.produce_key, entry);
     }
-    return [...map.values()].sort((a, b) => b.totalWeight - a.totalWeight);
+    return [...map.values()].sort((a, b) => {
+      if (a.hasWeight && b.hasWeight) return b.totalWeight - a.totalWeight;
+      if (a.hasWeight) return -1;
+      if (b.hasWeight) return 1;
+      return b.totalCount - a.totalCount;
+    });
   }
 
   get _filteredHarvests() {
@@ -496,7 +505,7 @@ class HistoricalData extends LitElement {
             <tr>
               <th>Produce</th>
               <th>Harvests</th>
-              <th>Total Weight (lbs)</th>
+              <th>Total</th>
             </tr>
           </thead>
           <tbody>
@@ -506,7 +515,7 @@ class HistoricalData extends LitElement {
                 <tr>
                   <td>${row.name}</td>
                   <td class="numeric">${row.count}</td>
-                  <td class="numeric total-weight">${row.hasWeight ? row.totalWeight.toFixed(2) : 'N/A'}</td>
+                  <td class="numeric total-weight">${row.hasWeight ? `${row.totalWeight.toFixed(2)} lbs` : row.hasCount ? `${row.totalCount} ct` : 'N/A'}</td>
                 </tr>
               `)
             }
